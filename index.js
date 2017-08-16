@@ -33,6 +33,10 @@ Server.prototype.get = function(path, data) {
 };
 
 
+Server.prototype.db = function(opts) {
+};
+
+
 
 exports.server = function(opts) {
     return new Server(opts);

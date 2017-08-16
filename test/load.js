@@ -69,6 +69,13 @@ describe('entrain-couchdb', function() {
                 })
             });
         });
+
+        it('should have method db', function() {
+            expect(server).to.respondTo('db');
+        });
+
+        describe('method db', function() {
+        });
     });
 
 });
