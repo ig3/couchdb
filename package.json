@@ -9,7 +9,10 @@
     "email": "Ian.Goodacre@xtra.co.nz",
     "url": "https://github.com/ig3"
   },
-  "dependencies": {},
+  "dependencies": {
+    "request": "^2.81.0",
+    "request-promise": "^4.2.1"
+  },
   "devDependencies": {},
   "scripts": {
     "test": "node test.js"
