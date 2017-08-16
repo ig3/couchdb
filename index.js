@@ -29,7 +29,6 @@ Server.prototype.get = function(path, data) {
         }
     };
 
-    console.log('options: ' + JSON.stringify(options));
     return rp(options);
 };
 

@@ -2,14 +2,8 @@ var expect = require('chai').expect;
 var config = require('config');
 
 
-console.log('config sources: ' + JSON.stringify(config.util.getConfigSources()));
-console.log('NODE_ENV: ' + config.util.getEnv('NODE_ENV'));
-
-console.log('config: ' + JSON.stringify(config));
-
 var test_server_opts = config.get('test_server');
 
-console.log('test_server_opts: ' + JSON.stringify(test_server_opts));
 
 describe('entrain-couchdb', function() {
     it('should load', function() {
@@ -45,14 +39,14 @@ describe('entrain-couchdb', function() {
         });
 
         describe('get', function() {
-            it('should not throw', function() {
-                var f = function() { server.get('/'); };
-                expect(f).to.not.throw();
-            });
-            it('should return a promise', function() {
+            it('should return a promise', function(done) {
                 var resp = server.get('/');
                 expect(resp).to.respondTo('then');
                 expect(resp).to.respondTo('catch');
+                resp
+                .then(function(info) { })
+                .catch(function(err) { })
+                .then(function() { done(); });
             });
         });
     });
