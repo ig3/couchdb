@@ -15,10 +15,12 @@
   },
   "devDependencies": {
     "assert": "^1.4.1",
+    "chai": "^4.1.1",
+    "config": "^1.26.2",
     "mocha": "^3.5.0"
   },
   "scripts": {
-    "test": "mocha"
+    "test": "mocha --recursive"
   },
   "keywords": [],
   "repository": {
