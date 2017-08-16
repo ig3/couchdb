@@ -13,9 +13,12 @@
     "request": "^2.81.0",
     "request-promise": "^4.2.1"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "assert": "^1.4.1",
+    "mocha": "^3.5.0"
+  },
   "scripts": {
-    "test": "node test.js"
+    "test": "mocha"
   },
   "keywords": [],
   "repository": {
