@@ -1,0 +1,26 @@
+{
+  "name": "entrain-couchdb",
+  "version": "1.0.0",
+  "description": "Entrain's CouchDB client",
+  "main": "index.js",
+  "license": "MIT",
+  "author": {
+    "name": "Ian Goodacre",
+    "email": "Ian.Goodacre@xtra.co.nz",
+    "url": "https://github.com/ig3"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "scripts": {
+    "test": "node test.js"
+  },
+  "keywords": [],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/ig3/entrain-couchdb.git"
+  },
+  "homepage": "https://github.com/ig3/entrain-couchdb",
+  "bugs": {
+    "url": "https://github.com/ig3/entrain-couchdb/issues"
+  }
+}
