@@ -33,7 +33,38 @@ Server.prototype.get = function(path, data) {
 };
 
 
+
+function Database(opts) {
+    if(!opts) throw new Error('Missing opts');
+    if(typeof opts !== 'object') throw new TypeError('opts is not an object');
+    this.server = opts.server;
+    this.db_name = opts.db_name;
+    this.username = opts.username || opts.server.username;
+    this.password = opts.password || opts.server.password;
+}
+
+
+Database.prototype.get = function(path, data) {
+    return rp({
+        method: 'GET',
+        uri: this.server.protocol + '://' +
+            this.server.hostname + ':' + this.server.port +
+            '/' + this.db_name + '/' + path,
+        body: data,
+        json: true,
+        auth: {
+            username: this.username,
+            password: this.password
+        }
+    });
+};
+
+
 Server.prototype.db = function(opts) {
+    if(!opts) throw new Error('Missing opts');
+    if(typeof opts !== 'object') throw new TypeError('opts is not an object');
+    opts.server = this;
+    return new Database(opts);
 };
 
 
