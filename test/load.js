@@ -48,6 +48,26 @@ describe('entrain-couchdb', function() {
                 .catch(function(err) { })
                 .then(function() { done(); });
             });
+            it('should resolve to an object', function(done) {
+                var resp = server.get('/');
+                expect(resp).to.respondTo('then');
+                expect(resp).to.respondTo('catch');
+                resp
+                .then(function(info) {
+                    expect(info).to.be.an('object');
+                    expect(info).to.include.all.keys(
+                        'couchdb',
+                        'uuid',
+                        'version',
+                        'vendor'
+                    );
+                    done();
+                })
+                .catch(function(err) {
+                    console.log(err);
+                    done();
+                })
+            });
         });
     });
 
