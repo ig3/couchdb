@@ -18,7 +18,7 @@ npm install entrain-couchdb --save
 - [Configuration](#configuration)
 - [Server functions](#server-functions)
   - [server.db(opts)](#serverdbopts)
-  - [server.get(path)](#servergetpah)
+  - [server.get(path)](#servergetpath)
 - [Database functions](#database-functions)
   - [db.get(path)](#dbgetpath)
 
