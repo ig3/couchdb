@@ -1,6 +1,6 @@
 {
   "name": "entrain-couchdb",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Entrain's CouchDB client",
   "main": "index.js",
   "license": "MIT",

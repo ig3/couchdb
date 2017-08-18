@@ -159,11 +159,41 @@ Database.prototype.changes = function(opts) {
 };
 
 
+Database.prototype.post = function(path, data) {
+    return rp({
+        method: 'POST',
+        uri: this.server.protocol + '://' +
+            this.server.hostname + ':' + this.server.port +
+            '/' + this.db_name + '/' + path,
+        body: data,
+        json: true,
+        auth: {
+            username: this.username,
+            password: this.password
+        }
+    });
+};
+
+
 Server.prototype.db = function(opts) {
     if(!opts) throw new Error('Missing opts');
     if(typeof opts !== 'object') throw new TypeError('opts is not an object');
     opts.server = this;
     return new Database(opts);
+};
+
+
+Server.prototype.post = function(path, data) {
+    return rp({
+        method: 'POST',
+        uri: this.protocol + '://' + this.hostname + ':' + this.port + path,
+        body: data,
+        json: true,
+        auth: {
+            username: this.username,
+            password: this.password
+        }
+    });
 };
 
 

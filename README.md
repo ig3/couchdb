@@ -19,9 +19,11 @@ npm install entrain-couchdb --save
 - [Server functions](#server-functions)
   - [server.db(opts)](#serverdbopts)
   - [server.get(path)](#servergetpath)
+  - [server.post(path,data)](#serverpostpathdata)
 - [Database functions](#database-functions)
   - [db.changes(opts)](#dbchangesopts)
   - [db.get(path)](#dbgetpath)
+  - [db.post(path,data)](#dbpostpathdata)
 
 
 ## Getting started
@@ -116,6 +118,35 @@ This does an HTTP GET on http://hostname:port/path.
 If the path does not begin with '/' then '/' is prepended to the path.
 
 
+### server.post(path,data)
+
+Send an HTTP POST request with an arbitrary path and data.
+
+Path is the path part of the URL to the server.
+
+Data is and object that will be transformed to JSON and sent as the body 
+of the POST request.
+
+Returns a promise that resolves to the CouchDB response or an error.
+
+```js
+server.post('/my_db/_bulk_docs', {
+    all_or_nothing: true,
+    docs: [{
+        _id: 'new_doc_id',
+        data: 'some data'
+    }]
+}))
+.then(function(info) {
+    console.log('POST response: ' + JSON.stringify(info));
+})
+.catch(function(err) {
+    console.log('POST failed with: ', err);
+    throw err;
+});
+```
+
+
 ## Database functions
 
 ### db.changes(opts)
@@ -173,6 +204,35 @@ db.get(id + '?meta=true')
     throw err;
 });
 ```
+
+### db.post(path,data)
+
+Send an HTTP POST request with an arbitrary path and data.
+
+Path is appended to the database name.
+
+Data is and object that will be transformed to JSON and sent as the body 
+of the POST request.
+
+Returns a promise that resolves to the CouchDB response or an error.
+
+```js
+db.post('_bulk_docs', {
+    all_or_nothing: true,
+    docs: [{
+        _id: 'new_doc_id',
+        data: 'some data'
+    }]
+}))
+.then(function(info) {
+    console.log('POST response: ' + JSON.stringify(info));
+})
+.catch(function(err) {
+    console.log('POST failed with: ', err);
+    throw err;
+});
+```
+
 
 
 ## License
