@@ -20,6 +20,7 @@ npm install entrain-couchdb --save
   - [server.db(opts)](#serverdbopts)
   - [server.get(path)](#servergetpath)
 - [Database functions](#database-functions)
+  - [db.changes(opts)](#dbchangesopts)
   - [db.get(path)](#dbgetpath)
 
 
@@ -116,6 +117,30 @@ If the path does not begin with '/' then '/' is prepended to the path.
 
 
 ## Database functions
+
+### db.changes(opts)
+
+Requests a continuous change feed and returns an event emitter that emits
+the following event:
+
+* change - for each change received
+* error - if there is an error
+
+The changes feed can be cancelled by calling the cancel() method.
+
+```js
+var changes = db.changes();
+
+changes.on('change', function(change) {
+    console.log('got a change ' + change);
+});
+changes.on('error', function(error) {
+    console.log('oops');
+});
+
+changes.cancel();
+```
+
 
 ### db.get(path)
 

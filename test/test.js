@@ -96,6 +96,10 @@ describe('entrain-couchdb', function() {
                 expect(db).to.respondTo('get');
             });
 
+            it('should have method changes', function() {
+                expect(db).to.respondTo('changes');
+            });
+
 
             describe('method get', function() {
                 it('should return a promise', function(done) {
@@ -124,6 +128,32 @@ describe('entrain-couchdb', function() {
                         throw err;
                         done();
                     })
+                });
+            });
+
+            describe('Method changes', function() {
+                var change_count = 0;
+                var changes = db.changes();
+                changes.on('change', function(change) {
+                    console.log('change ' + JSON.stringify(change));
+                    change_count++;
+                });
+
+                it('should be an event emitter', function() {
+                    expect(changes).to.respondTo('on');
+                });
+                it('should be cancellable', function() {
+                    expect(changes).to.respondTo('cancel');
+                });
+                it('should issue change events', function(done) {
+                    // A change event may have been issued 
+                    // before we get to this test and the
+                    // events don't queue.
+                    if(change_count) done();
+                    changes.on('change', function(change) {
+                        console.log('change ' + JSON.stringify(change));
+                        done();
+                    });
                 });
             });
         });
