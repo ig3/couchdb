@@ -136,7 +136,7 @@ server.post('/my_db/_bulk_docs', {
         _id: 'new_doc_id',
         data: 'some data'
     }]
-}))
+})
 .then(function(info) {
     console.log('POST response: ' + JSON.stringify(info));
 })
@@ -223,7 +223,7 @@ db.post('_bulk_docs', {
         _id: 'new_doc_id',
         data: 'some data'
     }]
-}))
+})
 .then(function(info) {
     console.log('POST response: ' + JSON.stringify(info));
 })
