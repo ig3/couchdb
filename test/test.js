@@ -6,6 +6,27 @@ var rp = require('request-promise');
 var test_server_opts = config.get('test_server');
 var test_db_opts = config.get('test_db');
 
+function create_test_doc(id) {
+    var url = 'http://' + 
+        test_server_opts.hostname + ':' +
+        test_server_opts.port + '/' +
+        test_db_opts.db_name;
+    return rp({
+        method: 'POST',
+        url: url,
+        body: {
+            _id: id,
+            when: new Date().toISOString()
+        },
+        json: true,
+        auth: {
+            username: test_server_opts.username,
+            password: test_server_opts.password
+        }
+    });
+}
+
+
 
 describe('entrain-couchdb', function() {
     after('delete test database', function(done) {
@@ -134,19 +155,7 @@ describe('entrain-couchdb', function() {
                 })
                 .then(function(info) {
                     console.log('created database');
-                    return rp({
-                        method: 'POST',
-                        url: url,
-                        body: {
-                            _id: 'test_doc',
-                            when: new Date().toISOString()
-                        },
-                        json: true,
-                        auth: {
-                            username: test_server_opts.username,
-                            password: test_server_opts.password
-                        }
-                    });
+                    return create_test_doc('test_doc');
                 })
                 .then(function(info) {
                     console.log('created test_doc');
@@ -191,6 +200,10 @@ describe('entrain-couchdb', function() {
                 expect(db).to.respondTo('purge');
             });
 
+            it('should have method soft_delete', function() {
+                expect(db).to.respondTo('soft_delete');
+            });
+
 
             describe('method db.get', function() {
                 it('should return a promise', function(done) {
@@ -218,7 +231,7 @@ describe('entrain-couchdb', function() {
                     .catch(function(err) {
                         throw err;
                         done();
-                    })
+                    });
                 });
             });
 
@@ -303,6 +316,70 @@ describe('entrain-couchdb', function() {
                         console.log('purge test_doc failed');
                         throw err;
                     })
+                });
+            });
+
+            describe('Method db.put', function() {
+                it('should return a promise', function(done) {
+                    var resp = db.put('xxx', {
+                        _id: 'xxx'
+                    });
+                    expect(resp).to.respondTo('then');
+                    expect(resp).to.respondTo('catch');
+                    resp
+                    .then(function(info) { })
+                    .catch(function(err) { console.log('post test_doc2 failed'); })
+                    .then(function() { done(); });
+                });
+                it('should resolve to an object', function(done) {
+                    db.put('yyy', {
+                        _id: 'yyy'
+                    })
+                    .then(function(info) {
+                        console.log('put returned ' + JSON.stringify(info));
+                        expect(info).to.be.an('object');
+                        done();
+                    })
+                    .catch(function(err) {
+                        console.log('put xxx failed', err);
+                        throw err;
+                    })
+                });
+            });
+
+            describe('Method db.soft_delete', function() {
+                it('should return a promise', function(done) {
+                    var resp = db.soft_delete({
+                        _id: 'xxx'
+                    });
+                    expect(resp).to.respondTo('then');
+                    expect(resp).to.respondTo('catch');
+                    resp
+                    .then(function(info) { })
+                    .catch(function(err) { })
+                    .then(function() { done(); });
+                });
+                it('should resolve to an object', function(done) {
+                    create_test_doc('test_doc')
+                    .then(function() {
+                        return db.get('test_doc')
+                    })
+                    .then(function(doc) {
+                        db.soft_delete(doc)
+                        .then(function(info) {
+                            console.log('soft delete info ' + JSON.stringify(info));
+                            expect(info).to.be.an('object');
+                            expect(info).to.include.all.keys(
+                                '_id',
+                                '_rev'
+                            );
+                            done();
+                        })
+                        .catch(function(err) {
+                            throw err;
+                            done();
+                        });
+                    });
                 });
             });
         });

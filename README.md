@@ -254,6 +254,47 @@ db.purge('some_id')
 ```
 
 
+### db.put(path, data)
+
+Submit an HTTP PUT request to path, prefixed with database name, and
+with given data.
+
+Returns a promise wich resolves to an info object or an error.
+
+```js
+db.put('new_doc', {
+    _id: 'new_doc',
+    data: 'some data'
+})
+.then(function(info) {
+    console.log('put succeeded');
+})
+.catch(function(err) {
+    console.log('put failed with ', err);
+});
+```
+
+### db.soft_delete(doc)
+
+Given a doc, set property deleted\_time to current time and \_deleted to true.
+
+Returns a promise that resolves to the updated version of the doc or
+an error.
+
+```js
+db.get('some_doc')
+.then(function(doc) {
+    return db.soft_delete(doc);
+})
+.then(function(info) {
+    console.log('put succeeded');
+})
+.catch(function(err) {
+    console.log('put failed with ', err);
+});
+```
+
+
 ## License
 
 MIT, see [LICENSE.md](http://github.com/ig3/entrain-couchdb/blob/master/LICENSE.md) for details.

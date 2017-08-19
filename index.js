@@ -189,6 +189,40 @@ Database.prototype.purge = function(id) {
 };
 
 
+Database.prototype.put = function(path, data) {
+    return rp({
+        method: 'PUT',
+        uri: this.server.protocol + '://' +
+            this.server.hostname + ':' + this.server.port +
+            '/' + this.db_name + '/' + path,
+        body: data,
+        json: true,
+        auth: {
+            username: this.username,
+            password: this.password
+        }
+    });
+};
+
+
+Database.prototype.soft_delete = function(doc) {
+    var self = this;
+
+    doc.deleted_time = new Date().toISOString();
+    doc._deleted = true;
+
+    return this.put(doc._id, doc)
+    .then(function(info) {
+        console.log('put returned ' + JSON.stringify(info));
+        return self.get(doc._id + '?rev=' + info.rev)
+        .catch(function(err) {
+            console.log('get after delete failed with ', err);
+            throw err;
+        });
+    });
+};
+
+
 Server.prototype.db = function(opts) {
     if(!opts) throw new Error('Missing opts');
     if(typeof opts !== 'object') throw new TypeError('opts is not an object');
