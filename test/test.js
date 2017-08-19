@@ -1,5 +1,6 @@
 var expect = require('chai').expect;
 var config = require('config');
+var rp = require('request-promise');
 
 
 var test_server_opts = config.get('test_server');
@@ -7,6 +8,26 @@ var test_db_opts = config.get('test_db');
 
 
 describe('entrain-couchdb', function() {
+    after('delete test database', function(done) {
+        var url = 'http://' + 
+            test_server_opts.hostname + ':' +
+            test_server_opts.port + '/' +
+            test_db_opts.db_name;
+        console.log('url: ' + url);
+        rp({
+            method: 'DELETE',
+            url: url,
+            json: true,
+            auth: {
+                username: test_server_opts.username,
+                password: test_server_opts.password
+            }
+        })
+        .then(function(info) {
+            done();
+        });
+    });
+
     it('should load', function() {
         var couchdb = require('..');
     });
@@ -79,7 +100,65 @@ describe('entrain-couchdb', function() {
             });
         });
 
-        describe('method db', function() {
+        describe('method db', function(done) {
+            before('setup test database', function(done) {
+                // Delete the test database then recreate it
+                var url = 'http://' + 
+                    test_server_opts.hostname + ':' +
+                    test_server_opts.port + '/' +
+                    test_db_opts.db_name;
+                console.log('url: ' + url);
+                rp({
+                    method: 'DELETE',
+                    url: url,
+                    json: true,
+                    auth: {
+                        username: test_server_opts.username,
+                        password: test_server_opts.password
+                    }
+                })
+                .catch(function(err) {
+                    // Ignore if database doesn't exist
+                })
+                .then(function(info) {
+                    console.log('deleted database');
+                    return rp({
+                        method: 'PUT',
+                        url: url,
+                        json: true,
+                        auth: {
+                            username: test_server_opts.username,
+                            password: test_server_opts.password
+                        }
+                    });
+                })
+                .then(function(info) {
+                    console.log('created database');
+                    return rp({
+                        method: 'POST',
+                        url: url,
+                        body: {
+                            _id: 'test_doc',
+                            when: new Date().toISOString()
+                        },
+                        json: true,
+                        auth: {
+                            username: test_server_opts.username,
+                            password: test_server_opts.password
+                        }
+                    });
+                })
+                .then(function(info) {
+                    console.log('created test_doc');
+                    done();
+                })
+                .catch(function(err) {
+                    console.log('before failed with: ', err);
+                    throw err;
+                });
+            });
+
+
             it('should throw Error Missing opts with no arguments', function() {
                 expect(server.db).to.throw(Error, 'Missing opts');
             });
@@ -108,8 +187,12 @@ describe('entrain-couchdb', function() {
                 expect(db).to.respondTo('post');
             });
 
+            it('should have method purge', function() {
+                expect(db).to.respondTo('purge');
+            });
 
-            describe('method get', function() {
+
+            describe('method db.get', function() {
                 it('should return a promise', function(done) {
                     var resp = db.get('test_doc');
                     expect(resp).to.respondTo('then');
@@ -139,7 +222,7 @@ describe('entrain-couchdb', function() {
                 });
             });
 
-            describe('Method changes', function() {
+            describe('Method db.changes', function() {
                 var changes = db.changes();
                 var got_changes = new Promise(function(accept, reject) {
                     changes.on('change', function(change) {
@@ -163,7 +246,7 @@ describe('entrain-couchdb', function() {
                 });
             });
 
-            describe('Method post', function() {
+            describe('Method db.post', function() {
                 it('should return a promise', function(done) {
                     var resp = db.post('_bulk_docs', {
                         all_or_nothing: true,
@@ -179,7 +262,7 @@ describe('entrain-couchdb', function() {
                     .catch(function(err) { console.log('post test_doc2 failed'); })
                     .then(function() { done(); });
                 });
-                it('should resolve to an object', function(done) {
+                it('should resolve to an array', function(done) {
                     db.post('_bulk_docs', {
                         all_or_nothing: true,
                         docs: [ {
@@ -189,11 +272,7 @@ describe('entrain-couchdb', function() {
                     })
                     .then(function(info) {
                         console.log('bulk docs returned ' + JSON.stringify(info));
-                         expect(info).to.be.an('array');
-//                        expect(info).to.include.all.keys(
-//                            '_id',
-//                            '_rev'
-//                        );
+                        expect(info).to.be.an('array');
                         done();
                     })
                     .catch(function(err) {
@@ -202,10 +281,34 @@ describe('entrain-couchdb', function() {
                     })
                 });
             });
+
+            describe('Method db.purge', function() {
+                it('should return a promise', function(done) {
+                    var resp = db.purge('xxx');
+                    expect(resp).to.respondTo('then');
+                    expect(resp).to.respondTo('catch');
+                    resp
+                    .then(function(info) { })
+                    .catch(function(err) { })
+                    .then(function() { done(); });
+                });
+                it('should resolve to an object', function(done) {
+                    db.purge('test_doc')
+                    .then(function(info) {
+                        console.log('purge returned ' + JSON.stringify(info));
+                        expect(info).to.be.an('object');
+                        done();
+                    })
+                    .catch(function(err) {
+                        console.log('purge test_doc failed');
+                        throw err;
+                    })
+                });
+            });
         });
 
 
-        describe('Method post', function() {
+        describe('Method server.post', function() {
             it('should return a promise', function(done) {
                 var resp = server.post('/' + test_db_opts.db_name + '/_bulk_docs', {
                     all_or_nothing: true,

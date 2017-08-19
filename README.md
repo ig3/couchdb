@@ -24,6 +24,7 @@ npm install entrain-couchdb --save
   - [db.changes(opts)](#dbchangesopts)
   - [db.get(path)](#dbgetpath)
   - [db.post(path,data)](#dbpostpathdata)
+  - [db.purge(id)](#dbpurgeid)
 
 
 ## Getting started
@@ -233,6 +234,24 @@ db.post('_bulk_docs', {
 });
 ```
 
+
+### db.purge(id)
+
+Purge the document with the given id from the database.
+
+Returns a promise wich resolves to an info object if the doc is purged
+or an error.
+
+
+```js
+db.purge('some_id')
+.then(function(info) {
+    console.log('document was purged');
+})
+.catch(function(err) {
+    console.log('purge failed with ', err);
+});
+```
 
 
 ## License

@@ -175,6 +175,20 @@ Database.prototype.post = function(path, data) {
 };
 
 
+Database.prototype.purge = function(id) {
+    var self = this;
+    return this.get(id + '?meta=true')
+    .then(function(doc) {
+        var revs = doc._revs_info
+            .filter(function(info) { return(info.status === 'available'); })
+            .map(function(info) { return(info.rev); });
+        var data = {};
+        data[id] = revs;
+        return self.post('_purge', data);
+    });
+};
+
+
 Server.prototype.db = function(opts) {
     if(!opts) throw new Error('Missing opts');
     if(typeof opts !== 'object') throw new TypeError('opts is not an object');
