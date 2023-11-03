@@ -4,13 +4,10 @@ const http = require('http');
 const https = require('https');
 
 module.exports = function (opts) {
-  console.log('rp here', opts);
-
   return new Promise((resolve, reject) => {
     if (!opts.uri) {
       return reject(new Error('missing uri'));
     }
-    console.log('uri: ', opts.uri);
     const url = new URL(opts.uri);
 
     const agent = (url.protocol === 'http:') ? http : (url.protocol === 'https:') ? https : undefined;
@@ -18,8 +15,6 @@ module.exports = function (opts) {
     if (!agent) {
       return reject(new Error('unsupported protocol: ' + url.protocol));
     }
-
-    console.log('opts: ', JSON.stringify(opts, null, 2));
 
     const options = {
       host: url.hostname,
@@ -34,7 +29,6 @@ module.exports = function (opts) {
     ) {
       options.auth = opts.auth.username + ':' + opts.auth.password;
     }
-    console.log('options: ', JSON.stringify(options, null, 2));
     const req = agent.request(options, res => {
       const bufs = [];
       let len = 0;
@@ -43,8 +37,6 @@ module.exports = function (opts) {
         len += chunk.length;
       });
       res.on('end', () => {
-        console.log('status: ', res.statusCode, len);
-        console.log('response: ', '' + Buffer.concat(bufs, len));
         if (
           res.statusCode === 200 ||
           res.statusCode === 201
