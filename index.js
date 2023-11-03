@@ -236,9 +236,6 @@ exports.server = function (opts) {
 
 function rp (opts) {
   return new Promise((resolve, reject) => {
-    if (!opts.uri) {
-      return reject(new Error('missing uri'));
-    }
     const url = new URL(opts.uri);
 
     const http = require('http');
@@ -289,8 +286,6 @@ function rp (opts) {
       if (opts.json) {
         req.setHeader('content-type', 'application/json');
         req.write(JSON.stringify(opts.body));
-      } else {
-        req.write(opts.body, 'binary');
       }
     }
     req.end();
