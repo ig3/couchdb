@@ -240,11 +240,7 @@ function rp (opts) {
 
     const http = require('http');
     const https = require('https');
-    const agent = (url.protocol === 'http:') ? http : (url.protocol === 'https:') ? https : undefined;
-
-    if (!agent) {
-      return reject(new Error('unsupported protocol: ' + url.protocol));
-    }
+    const agent = (url.protocol === 'http:') ? http : https;
 
     const options = {
       host: url.hostname,
