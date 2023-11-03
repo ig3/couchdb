@@ -112,7 +112,7 @@ t.test('db.post', t => {
       return true;
     }
   )
-  .reply(200, [
+  .reply(201, [
     { ok: true, id: 'test_doc1', rev: '1-9a4921b3df5cd5788e4ff31362f92f29' }
   ]);
   const couchdb = require('..');
