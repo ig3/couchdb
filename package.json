@@ -15,7 +15,6 @@
   },
   "devDependencies": {
     "@ig3/eslint-config-entrain": "^3.0.1",
-    "assert": "^1.4.1",
     "c8": "^8.0.1",
     "config": "^1.26.2",
     "multi-tape": "^1.7.0",
