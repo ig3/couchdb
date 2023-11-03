@@ -10,9 +10,8 @@ t.test('basic', t => {
 });
 
 t.test('no options', t => {
-  const couchdb = require('..');
   t.throws(() => {
-    couchdb.server();
+    require('..')();
   }, /Missing opts/, 'throws without options');
   t.end();
 });
@@ -33,12 +32,11 @@ t.test('connect', t => {
     silly: 'nonsense'
   });
 
-  const couchdb = require('..');
-  const server = couchdb.server({
+  const couchdb = require('..')({
     hostname: 'localhost',
     port: 5984
   });
-  const x = server.get('/');
+  const x = couchdb.get('/');
   t.equal(typeof x.then, 'function', 'returns a promise');
   t.equal(typeof x.catch, 'function', 'returns a promise');
   x.then(result => {
@@ -68,14 +66,13 @@ t.test('server.post', t => {
   .reply(200, [
     { ok: true, id: 'test_doc1', rev: '1-9a4921b3df5cd5788e4ff31362f92f29' }
   ]);
-  const couchdb = require('..');
-  const server = couchdb.server({
+  const couchdb = require('..')({
     hostname: 'localhost',
     port: 5984,
     username: 'test',
     password: 'test'
   });
-  server.post('/test/_bulk_docs', {
+  couchdb.post('/test/_bulk_docs', {
     docs: [{
       _id: 'test_doc1',
       data: 'This is a test'
@@ -115,14 +112,13 @@ t.test('db.post', t => {
   .reply(201, [
     { ok: true, id: 'test_doc1', rev: '1-9a4921b3df5cd5788e4ff31362f92f29' }
   ]);
-  const couchdb = require('..');
-  const server = couchdb.server({
+  const couchdb = require('..')({
     hostname: 'localhost',
     port: 5984,
     username: 'test',
     password: 'test'
   });
-  const db = server.db({
+  const db = couchdb.db({
     db_name: 'test',
     username: 'test',
     password: 'test'
@@ -180,14 +176,13 @@ t.test('db.soft_delete', t => {
     deleted_time: 'some time',
     _rev: 'new rev'
   });
-  const couchdb = require('..');
-  const server = couchdb.server({
+  const couchdb = require('..')({
     hostname: 'localhost',
     port: 5984,
     username: 'test',
     password: 'test'
   });
-  const db = server.db({
+  const db = couchdb.db({
     db_name: 'test',
     username: 'test',
     password: 'test'
@@ -246,14 +241,13 @@ t.test('db.purge', t => {
       ]
     }
   });
-  const couchdb = require('..');
-  const server = couchdb.server({
+  const couchdb = require('..')({
     hostname: 'localhost',
     port: 5984,
     username: 'test',
     password: 'test'
   });
-  const db = server.db({
+  const db = couchdb.db({
     db_name: 'test',
     username: 'test',
     password: 'test'
@@ -330,14 +324,13 @@ t.test('db.changes', t => {
       ]
     }
   });
-  const couchdb = require('..');
-  const server = couchdb.server({
+  const couchdb = require('..')({
     hostname: 'localhost',
     port: 5984,
     username: 'test',
     password: 'test'
   });
-  const db = server.db({
+  const db = couchdb.db({
     db_name: 'test',
     username: 'test',
     password: 'test'

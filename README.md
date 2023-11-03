@@ -2,7 +2,7 @@
 
 [![experimental](http://badges.github.io/stability-badges/dist/experimental.svg)](http://github.com/badges/stability-badges)
 
-Entrain's CouchDB client
+Simple CouchDB client
 
 ## Install
 
@@ -11,29 +11,12 @@ Use [npm](https://npmjs.com/) to install.
 ```sh
 npm install @ig3/couchdb
 ```
-
-## Table of contents
-
-- [Getting started](#getting-started)
-- [Configuration](#configuration)
-- [Server functions](#server-functions)
-  - [server.db(opts)](#serverdbopts)
-  - [server.get(path)](#servergetpath)
-  - [server.post(path,data)](#serverpostpathdata)
-- [Database functions](#database-functions)
-  - [db.changes(opts)](#dbchangesopts)
-  - [db.get(path)](#dbgetpath)
-  - [db.post(path,data)](#dbpostpathdata)
-  - [db.purge(id)](#dbpurgeid)
-
-
 ## Getting started
 
 To use `@ig3/couchdb` you need to connect to your CouchDB server:
 
 ```js
-var couch = require('@ig3/couchdb');
-var server = couch.server({
+var couch = require('@ig3/couchdb')({
     hostname: 'localhost',
     port:     5984,
     protocol: 'http',
@@ -45,7 +28,7 @@ var server = couch.server({
 To get server meta information:
 
 ```js
-server.get('/')
+couch.get('/')
 .then(function(info) {
     console.log(info);
 });
@@ -57,8 +40,7 @@ To configure @ig3/couchdb to access your CouchDB server:
 
 
 ```js
-var couch = require('@ig3/couchdb');
-var server = couch.server({
+var couch = require('@ig3/couchdb')({
     hostname: 'localhost',
     port:     5984,
     protocol: 'http',
@@ -67,26 +49,15 @@ var server = couch.server({
 });
 ```
 
-Or
 
-```js
-var server = require('@ig3/couchdb').server({
-    hostname: 'localhost',
-    port:     5984,
-    protocol: 'http',
-    username: 'admin',
-    password: 'secret'
-});
-```
+## Methods
 
-## Server functions
-
-### server.db(opts)
+### couch.db(opts)
 
 To configure a connection to a database:
 
 ```js
-var db = server.db({
+var db = couch.db({
     db_name: 'mydb',
     username:   'user',
     password:   'mypassword'
@@ -96,21 +67,18 @@ var db = server.db({
 The username and password are optional. If they are not provided, the 
 username and password of the server are used.
 
-See [Database functions](#database-functions).
-
-
-### server.get(path)
+### couch.get(path)
 
 HTTP GET against an arbitrary path on the server.
 
 ```js
-server.get('/')
+couch.get('/')
 .then(function(info) {
-    console.log('CouchDB meta information: ' + JSON.stringify(info));
+  console.log('CouchDB meta information: ' + JSON.stringify(info));
 })
 .catch(function(err) {
-    console.log('GET / failed with: ', err);
-    throw err;
+  console.log('GET / failed with: ', err);
+  throw err;
 });
 ```
 
@@ -119,7 +87,7 @@ This does an HTTP GET on http://hostname:port/path.
 If the path does not begin with '/' then '/' is prepended to the path.
 
 
-### server.post(path,data)
+### couch.post(path,data)
 
 Send an HTTP POST request with an arbitrary path and data.
 
@@ -131,19 +99,19 @@ of the POST request.
 Returns a promise that resolves to the CouchDB response or an error.
 
 ```js
-server.post('/my_db/_bulk_docs', {
-    all_or_nothing: true,
-    docs: [{
-        _id: 'new_doc_id',
-        data: 'some data'
-    }]
+couch.post('/my_db/_bulk_docs', {
+  all_or_nothing: true,
+  docs: [{
+    _id: 'new_doc_id',
+    data: 'some data'
+  }]
 })
 .then(function(info) {
-    console.log('POST response: ' + JSON.stringify(info));
+  console.log('POST response: ' + JSON.stringify(info));
 })
 .catch(function(err) {
-    console.log('POST failed with: ', err);
-    throw err;
+  console.log('POST failed with: ', err);
+  throw err;
 });
 ```
 
@@ -294,7 +262,10 @@ db.get('some_doc')
 });
 ```
 
+## Changes
 
-## License
+### 2.0.0 - 20231104
 
-MIT, see [LICENSE.md](http://github.com/ig3/couchdb/blob/master/LICENSE.md) for details.
+ * Change the module export to the server factory.
+ * Eliminate dependencies other than node core modules
+ * Rewrite tests using multi-tape, tape and nock

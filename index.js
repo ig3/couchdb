@@ -230,10 +230,6 @@ Server.prototype.post = function (path, data) {
   });
 };
 
-exports.server = function (opts) {
-  return new Server(opts);
-};
-
 function request (opts) {
   return new Promise((resolve, reject) => {
     const url = new URL(opts.uri);
@@ -287,3 +283,7 @@ function request (opts) {
     req.end();
   });
 }
+
+module.exports = function (opts) {
+  return new Server(opts);
+};
