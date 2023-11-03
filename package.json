@@ -9,10 +9,6 @@
     "email": "Ian.Goodacre@xtra.co.nz",
     "url": "https://github.com/ig3"
   },
-  "dependencies": {
-    "request": "^2.81.0",
-    "request-promise": "^4.2.1"
-  },
   "devDependencies": {
     "@ig3/eslint-config-entrain": "^3.0.1",
     "c8": "^8.0.1",
