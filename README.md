@@ -269,3 +269,6 @@ db.get('some_doc')
  * Change the module export to the server factory.
  * Eliminate dependencies other than node core modules
  * Rewrite tests using multi-tape, tape and nock
+
+### 2.0.1 - WIP
+ * Minimize published package size
