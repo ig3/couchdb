@@ -1,7 +1,5 @@
 # @ig3/couchdb
 
-[![experimental](http://badges.github.io/stability-badges/dist/experimental.svg)](http://github.com/badges/stability-badges)
-
 Simple CouchDB client
 
 ## Install
