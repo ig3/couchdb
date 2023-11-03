@@ -10,18 +10,20 @@
     "url": "https://github.com/ig3"
   },
   "dependencies": {
-    "heir": "^3.0.0",
     "request": "^2.81.0",
     "request-promise": "^4.2.1"
   },
   "devDependencies": {
+    "@ig3/eslint-config-entrain": "^3.0.1",
     "assert": "^1.4.1",
-    "chai": "^4.1.1",
+    "c8": "^8.0.1",
     "config": "^1.26.2",
-    "mocha": "^3.5.0"
+    "multi-tape": "^1.7.0",
+    "nock": "^13.3.8",
+    "tape": "^5.7.2"
   },
   "scripts": {
-    "test": "mocha --recursive"
+    "test": "eslint . && c8 --all multi-tape test/*.js"
   },
   "keywords": [],
   "repository": {
@@ -31,5 +33,8 @@
   "homepage": "https://github.com/ig3/entrain-couchdb",
   "bugs": {
     "url": "https://github.com/ig3/entrain-couchdb/issues"
+  },
+  "eslintConfig": {
+    "extends": "@ig3/eslint-config-entrain"
   }
 }

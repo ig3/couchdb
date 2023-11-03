@@ -1,423 +1,402 @@
-var expect = require('chai').expect;
-var config = require('config');
-var rp = require('request-promise');
+'use strict';
 
+const t = require('tape');
+const nock = require('nock');
+nock.disableNetConnect();
 
-var test_server_opts = config.get('test_server');
-var test_db_opts = config.get('test_db');
+t.test('basic', t => {
+  require('..');
+  t.end();
+});
 
-function create_test_doc(id) {
-    var url = 'http://' + 
-        test_server_opts.hostname + ':' +
-        test_server_opts.port + '/' +
-        test_db_opts.db_name;
-    return rp({
-        method: 'POST',
-        url: url,
-        body: {
-            _id: id,
-            when: new Date().toISOString()
-        },
-        json: true,
-        auth: {
-            username: test_server_opts.username,
-            password: test_server_opts.password
-        }
-    });
-}
+t.test('no options', t => {
+  const couchdb = require('..');
+  t.throws(() => {
+    couchdb.server();
+  }, /Missing opts/, 'throws without options');
+  t.end();
+});
 
+t.test('connect', t => {
+  nock.cleanAll();
+  nock('http://localhost:5984')
+  .get(
+    uri => {
+      console.log('nock url: ', uri);
+      return uri === '/';
+    },
+    body => {
+      console.log('nock body: ', body);
+      return true;
+    }
+  )
+  .reply(200, {
+    couchdb: 'Welcome',
+    silly: 'nonsense'
+  });
 
+  const couchdb = require('..');
+  const server = couchdb.server({
+    hostname: 'localhost',
+    port: 5984
+  });
+  const x = server.get('/');
+  t.equal(typeof x.then, 'function', 'returns a promise');
+  t.equal(typeof x.catch, 'function', 'returns a promise');
+  x.then(result => {
+    console.log('result: ', result);
+    t.equal(typeof result, 'object', 'resolves to an object');
+    t.equal(result.couchdb, 'Welcome', 'returns welcome message');
+    t.end();
+  });
+});
 
-describe('entrain-couchdb', function() {
-    after('delete test database', function(done) {
-        var url = 'http://' + 
-            test_server_opts.hostname + ':' +
-            test_server_opts.port + '/' +
-            test_db_opts.db_name;
-        console.log('url: ' + url);
-        rp({
-            method: 'DELETE',
-            url: url,
-            json: true,
-            auth: {
-                username: test_server_opts.username,
-                password: test_server_opts.password
-            }
-        })
-        .then(function(info) {
-            done();
-        });
-    });
+t.test('server.post', t => {
+  nock.cleanAll();
+  nock('http://localhost:5984')
+  .post(
+    uri => { // This will be called twice
+      console.log('nock url: ', uri);
+      t.equal(uri, '/test/_bulk_docs', 'uri');
+      return true;
+    },
+    body => {
+      console.log('nock body: ', body);
+      // { docs: [ { _id: 'test_doc1', when: '2023-11-03T08:28:37.996Z' } ] }
+      t.equal(typeof body, 'object', 'body type');
+      t.equal(typeof body.docs, 'object', 'body contains docs');
+      t.equal(body.docs[0]._id, 'test_doc1', 'docs contains test_doc1');
+      t.equal(body.docs[0].data, 'This is a test', 'document content');
+      return true;
+    }
+  )
+  .reply(200, [
+    { ok: true, id: 'test_doc1', rev: '1-9a4921b3df5cd5788e4ff31362f92f29' }
+  ]);
+  const couchdb = require('..');
+  const server = couchdb.server({
+    hostname: 'localhost',
+    port: 5984,
+    username: 'test',
+    password: 'test'
+  });
+  server.post('/test/_bulk_docs', {
+    docs: [{
+      _id: 'test_doc1',
+      data: 'This is a test'
+    }]
+  })
+  .then(info => {
+    console.log('info: ', info);
+    t.pass('should resolve');
+    // [{"ok":true,"id":"test_doc1","rev":"1-9a4921b3df5cd5788e4ff31362f92f29"}]\n'
+    t.equal(info[0].ok, true, 'should succeed');
 
-    it('should load', function() {
-        var couchdb = require('..');
-    });
-    var couchdb = require('..');
-    it('should export an object', function() {
-        expect(couchdb).to.be.an('object');
-    });
+    t.end();
+  })
+  .catch(err => {
+    console.log('err: ', err);
+    t.fail('should not reject');
+    console.log('err: ', err);
+    t.end();
+  });
+});
 
-    it('should have a server function', function() {
-        expect(couchdb.server).to.be.a('function');
-    });
+t.test('db.post', t => {
+  nock.cleanAll();
+  nock('http://localhost:5984')
+  .post(
+    uri => { // This will be called twice
+      console.log('nock url: ', uri);
+      t.equal(uri, '/test/_bulk_docs', 'uri');
+      return true;
+    },
+    body => {
+      console.log('nock body: ', body);
+      // { docs: [ { _id: 'test_doc1', when: '2023-11-03T08:28:37.996Z' } ] }
+      t.equal(typeof body, 'object', 'body type');
+      t.equal(typeof body.docs, 'object', 'body contains docs');
+      t.equal(body.docs[0]._id, 'test_doc1', 'docs contains test_doc1');
+      t.equal(body.docs[0].data, 'This is a test', 'document content');
+      return true;
+    }
+  )
+  .reply(200, [
+    { ok: true, id: 'test_doc1', rev: '1-9a4921b3df5cd5788e4ff31362f92f29' }
+  ]);
+  const couchdb = require('..');
+  const server = couchdb.server({
+    hostname: 'localhost',
+    port: 5984,
+    username: 'test',
+    password: 'test'
+  });
+  const db = server.db({
+    db_name: 'test',
+    username: 'test',
+    password: 'test'
+  });
+  console.log('XXXXXXXXXXXXX');
+  console.log('db username: ', db.username);
+  db.post('_bulk_docs', {
+    docs: [{
+      _id: 'test_doc1',
+      data: 'This is a test'
+    }]
+  })
+  .then(info => {
+    console.log('info: ', info);
+    t.pass('should resolve');
+    // [{"ok":true,"id":"test_doc1","rev":"1-9a4921b3df5cd5788e4ff31362f92f29"}]\n'
+    t.equal(info[0].ok, true, 'should succeed');
 
-    describe('method server', function() {
-        it('should throw Error Missing opts with no arguments', function() {
-            expect(couchdb.server).to.throw(Error, 'Missing opts');
-        });
-        it('should throw TypeError not an object if opts is not', function() {
-            var f = function() { couchdb.server(1); };
-            expect(f).to.throw(TypeError, 'opts is not an object');
-        });
+    t.end();
+  })
+  .catch(err => {
+    console.log('err: ', err);
+    t.fail('should not reject');
+    console.log('err: ', err);
+    t.end();
+  });
+});
 
-        it('should return an object', function() {
-            var server = couchdb.server({});
-            expect(server).to.be.an('object');
-        });
+t.test('db.soft_delete', t => {
+  nock.cleanAll();
+  nock('http://localhost:5984')
+  .put(
+    uri => { // This will be called twice
+      console.log('nock url: ', uri);
+      t.equal(uri, '/test/xxx', 'uri');
+      return true;
+    },
+    body => {
+      console.log('nock body: ', body);
+      // { docs: [ { _id: 'test_doc1', when: '2023-11-03T08:28:37.996Z' } ] }
+      t.equal(typeof body, 'object', 'body type');
+      t.equal(body._id, 'xxx', 'body._id');
+      t.equal(body._deleted, true, 'body.deleted');
+      return true;
+    }
+  )
+  .reply(200, {
+    ok: true,
+    id: 'xxx',
+    rev: '1-9a4921b3df5cd5788e4ff31362f92f29'
+  })
+  .get(
+    uri => { // This will be called twice
+      console.log('nock get url: ', uri);
+      t.equal(uri, '/test/xxx', 'uri');
+      return true;
+    }
+  )
+  .reply(200, {
+    _id: 'xxx',
+    _deleted: true,
+    deleted_time: 'some time',
+    _rev: 'new rev'
+  });
+  const couchdb = require('..');
+  const server = couchdb.server({
+    hostname: 'localhost',
+    port: 5984,
+    username: 'test',
+    password: 'test'
+  });
+  const db = server.db({
+    db_name: 'test',
+    username: 'test',
+    password: 'test'
+  });
+  console.log('XXXXXXXXXXXXX');
+  console.log('db username: ', db.username);
+  db.soft_delete({
+    _id: 'xxx'
+  })
+  .then(info => {
+    console.log('info: ', info);
+    t.pass('should resolve');
+    t.equal(info._rev, 'new rev', 'document revision');
+    t.equal(info.deleted_time, 'some time', 'document revision');
+    t.end();
+  })
+  .catch(err => {
+    console.log('err: ', err);
+    t.fail('should not reject');
+    console.log('err: ', err);
+    t.end();
+  });
+});
 
-        var server = couchdb.server(test_server_opts);
+t.test('db.purge', t => {
+  nock.cleanAll();
+  nock('http://localhost:5984')
+  .get(
+    uri => { // This will be called twice
+      console.log('nock url: ', uri);
+      t.equal(uri, '/test/xxx', 'uri');
+      return true;
+    }
+  )
+  .reply(200, {
+    ok: true,
+    id: 'xxx',
+    rev: '1-9a4921b3df5cd5788e4ff31362f92f29',
+    _revs_info: [
+      {
+        rev: '3-asdf',
+        status: 'available'
+      },
+      {
+        rev: '2-asdf',
+        status: 'available'
+      }
+    ]
+  })
+  .post(
+    uri => { // This will be called twice
+      console.log('nock post url: ', uri);
+      t.equal(uri, '/test/_purge', 'uri');
+      return true;
+    }
+  )
+  .reply(200, {
+    purge_seq: null,
+    purged: {
+      xxx: [
+        '3-asdf'
+      ]
+    }
+  });
+  const couchdb = require('..');
+  const server = couchdb.server({
+    hostname: 'localhost',
+    port: 5984,
+    username: 'test',
+    password: 'test'
+  });
+  const db = server.db({
+    db_name: 'test',
+    username: 'test',
+    password: 'test'
+  });
+  console.log('XXXXXXXXXXXXX');
+  console.log('db username: ', db.username);
+  db.purge('xxx')
+  .then(info => {
+    // { purge_seq: null, purged: { xxx: [ '3-asdf' ] } }
+    console.log('info: ', info);
+    console.log('typeof info: ', typeof info);
+    t.pass('should resolve');
+    t.equal(info.purge_seq, null, 'null purge sequence');
+    t.equal(typeof info.purged.xxx, 'object', 'document id');
+    t.equal(info.purged.xxx.length, 1, 'array length');
+    t.end();
+  })
+  .catch(err => {
+    console.log('err: ', err);
+    t.fail('should not reject');
+    console.log('err: ', err);
+    t.end();
+  });
+});
 
-        it('should have method db', function() {
-            expect(server).to.respondTo('db');
-        });
+t.test('db.changes', t => {
+  nock.cleanAll();
+  nock('http://localhost:5984')
+  .get(
+    uri => { // This will be called twice
+      console.log('nock url: ', uri);
+      t.equal(uri, '/test/_changes', 'uri');
+      return true;
+    }
+  )
+  .query(query => {
+    console.log('query: ', query);
+    t.equal(query.feed, 'continuous', 'query feed');
+    t.equal(query.heartbeat, '30000', 'query heartbeat');
+    return true;
+  })
+  .reply(
+    200,
+    (uri, requestBody) => {
+      const { Readable } = require('stream');
+      const inStream = new Readable({
+        read () {}
+      });
+      inStream.push('{"seq":"1-g1AAAAB5eJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zEhnwKMpjAZIMDUDqP0htBnMiYy5QgN3INCkx0cQUm74sAJQtIFo","id":"b3775776561011de158fc6551c0004ac","changes":[{"rev":"1-59414e77c768bc202142ac82c2f129de"}]}\n');
+      inStream.push('{"seq":"2-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTGXOBAuyJlsnmBhaG2DTgMSaPBUgyNACp_yimGZkmJSaamGLTlwUAFcUoSQ","id":"71091c1418986a91aa593474b600476e","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}\n');
+      inStream.push(`{"seq":"3-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTmXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_1DTGMGmGZkmJSaamGLTlwUAFjUoSg","id":"71091c1418986a91aa593474b6007c28","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+{"seq":"5-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTmXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_1DTmMGmGZkmJSaamGLTlwUAFnkoTA","id":"test_doc1","changes":[{"rev":"2-85c07d92c45b53acc1bc9429c2b5f9d1"}]}
+{"seq":"6-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTmXOBAuyJlsnmBhaG2DTgMSaPBUgyNACp_yimGZkmJSaamGLTlwUAFukoTQ","id":"71091c1418986a91aa593474b6008b09","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+`);
+      inStream.push('{"seq":"7-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTmXOBAuyJlsnmBhaG2DTg');
+      inStream.push(`MSaPBUgyNACp_1DTWMCmGZkmJSaamGLTlwUAFwsoTg","id":"71091c1418986a91aa593474b60017f0","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+`);
+      inStream.push('\r\r\r');
+      inStream.push(`{"seq":"8-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTWXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_yimGZkmJSaamGLTlwUAF3soTw","id":"71091c1418986a91aa593474b600b7a0","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+{"seq":"9-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTWXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_1DTWMGmGZkmJSaamGLTlwUAF50oUA","id":"71091c1418986a91aa593474b600308c","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+{"seq":"10-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTWXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_1DT2MCmGZkmJSaamGLTlwUAF78oUQ","id":"71091c1418986a91aa593474b6005a50","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+{"seq":"11-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTWXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_1DT2MGmGZkmJSaamGLTlwUAF-EoUg","id":"71091c1418986a91aa593474b600b396","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+`);
+      return inStream;
+    },
+    {
+      Server: 'CouchDB/3.2.0'
+    }
+  )
+  .post(
+    uri => { // This will be called twice
+      console.log('nock post url: ', uri);
+      t.equal(uri, '/test/_purge', 'uri');
+      return true;
+    }
+  )
+  .reply(200, {
+    purge_seq: null,
+    purged: {
+      xxx: [
+        '3-asdf'
+      ]
+    }
+  });
+  const couchdb = require('..');
+  const server = couchdb.server({
+    hostname: 'localhost',
+    port: 5984,
+    username: 'test',
+    password: 'test'
+  });
+  const db = server.db({
+    db_name: 'test',
+    username: 'test',
+    password: 'test'
+  });
+  console.log('XXXXXXXXXXXXX');
+  console.log('db username: ', db.username);
+  const changes = db.changes();
 
-        it('should have method get', function() {
-            expect(server).to.respondTo('get');
-        });
+  let nChanges = 0;
+  changes.on('change', change => {
+    console.log('got change: ', change);
+    nChanges++;
+  });
 
-        it('should have method post', function() {
-            expect(server).to.respondTo('post');
-        });
+  changes.on('error', err => {
+    console.log('got a changes error: ', err);
+  });
 
-        describe('method get', function() {
-            it('should return a promise', function(done) {
-                var resp = server.get('/');
-                expect(resp).to.respondTo('then');
-                expect(resp).to.respondTo('catch');
-                resp
-                .then(function(info) { })
-                .catch(function(err) { })
-                .then(function() { done(); });
-            });
-            it('should resolve to an object', function(done) {
-                var resp = server.get('/');
-                expect(resp).to.respondTo('then');
-                expect(resp).to.respondTo('catch');
-                resp
-                .then(function(info) {
-                    expect(info).to.be.an('object');
-                    expect(info).to.include.all.keys(
-                        'couchdb',
-                        'uuid',
-                        'version',
-                        'vendor'
-                    );
-                    done();
-                })
-                .catch(function(err) {
-                    console.log(err);
-                    done();
-                })
-            });
-        });
+  changes.on('reconnect', () => {
+    t.fail('should not reconnect');
+  });
 
-        describe('method db', function(done) {
-            before('setup test database', function(done) {
-                // Delete the test database then recreate it
-                var url = 'http://' + 
-                    test_server_opts.hostname + ':' +
-                    test_server_opts.port + '/' +
-                    test_db_opts.db_name;
-                console.log('url: ' + url);
-                rp({
-                    method: 'DELETE',
-                    url: url,
-                    json: true,
-                    auth: {
-                        username: test_server_opts.username,
-                        password: test_server_opts.password
-                    }
-                })
-                .catch(function(err) {
-                    // Ignore if database doesn't exist
-                })
-                .then(function(info) {
-                    console.log('deleted database');
-                    return rp({
-                        method: 'PUT',
-                        url: url,
-                        json: true,
-                        auth: {
-                            username: test_server_opts.username,
-                            password: test_server_opts.password
-                        }
-                    });
-                })
-                .then(function(info) {
-                    console.log('created database');
-                    return create_test_doc('test_doc');
-                })
-                .then(function(info) {
-                    console.log('created test_doc');
-                    done();
-                })
-                .catch(function(err) {
-                    console.log('before failed with: ', err);
-                    throw err;
-                });
-            });
+  setTimeout(() => {
+    changes.cancel();
+  }, 5000);
 
-
-            it('should throw Error Missing opts with no arguments', function() {
-                expect(server.db).to.throw(Error, 'Missing opts');
-            });
-            it('should throw TypeError not an object if opts is not', function() {
-                var f = function() { server.db(1); };
-                expect(f).to.throw(TypeError, 'opts is not an object');
-            });
-
-            it('should return an object', function() {
-                var db = server.db({});
-                expect(db).to.be.an('object');
-            });
-
-            var db = server.db(test_db_opts);
-
-
-            it('should have method changes', function() {
-                expect(db).to.respondTo('changes');
-            });
-
-            it('should have method get', function() {
-                expect(db).to.respondTo('get');
-            });
-
-            it('should have method post', function() {
-                expect(db).to.respondTo('post');
-            });
-
-            it('should have method purge', function() {
-                expect(db).to.respondTo('purge');
-            });
-
-            it('should have method soft_delete', function() {
-                expect(db).to.respondTo('soft_delete');
-            });
-
-
-            describe('method db.get', function() {
-                it('should return a promise', function(done) {
-                    var resp = db.get('test_doc');
-                    expect(resp).to.respondTo('then');
-                    expect(resp).to.respondTo('catch');
-                    resp
-                    .then(function(info) { })
-                    .catch(function(err) { })
-                    .then(function() { done(); });
-                });
-                it('should resolve to an object', function(done) {
-                    var resp = db.get('test_doc');
-                    expect(resp).to.respondTo('then');
-                    expect(resp).to.respondTo('catch');
-                    resp
-                    .then(function(info) {
-                        expect(info).to.be.an('object');
-                        expect(info).to.include.all.keys(
-                            '_id',
-                            '_rev'
-                        );
-                        done();
-                    })
-                    .catch(function(err) {
-                        throw err;
-                        done();
-                    });
-                });
-            });
-
-            describe('Method db.changes', function() {
-                var changes = db.changes();
-                var got_changes = new Promise(function(accept, reject) {
-                    changes.on('change', function(change) {
-                        console.log('change ' + JSON.stringify(change));
-                        changes.cancel();
-                        accept('ok');
-                    });
-                });
-
-                it('should be an event emitter', function() {
-                    expect(changes).to.respondTo('on');
-                });
-                it('should be cancellable', function() {
-                    expect(changes).to.respondTo('cancel');
-                });
-                it('should issue change events', function(done) {
-                    got_changes
-                    .then(function() {
-                        done();
-                    });
-                });
-            });
-
-            describe('Method db.post', function() {
-                it('should return a promise', function(done) {
-                    var resp = db.post('_bulk_docs', {
-                        all_or_nothing: true,
-                        docs: [ {
-                            _id: 'test_doc2',
-                            when: new Date().toISOString()
-                        } ]
-                    });
-                    expect(resp).to.respondTo('then');
-                    expect(resp).to.respondTo('catch');
-                    resp
-                    .then(function(info) { })
-                    .catch(function(err) { console.log('post test_doc2 failed'); })
-                    .then(function() { done(); });
-                });
-                it('should resolve to an array', function(done) {
-                    db.post('_bulk_docs', {
-                        all_or_nothing: true,
-                        docs: [ {
-                            _id: 'test_doc3',
-                            when: new Date().toISOString()
-                        } ]
-                    })
-                    .then(function(info) {
-                        console.log('bulk docs returned ' + JSON.stringify(info));
-                        expect(info).to.be.an('array');
-                        done();
-                    })
-                    .catch(function(err) {
-                        console.log('post test_doc3 failed');
-                        throw err;
-                    })
-                });
-            });
-
-            describe('Method db.purge', function() {
-                it('should return a promise', function(done) {
-                    var resp = db.purge('xxx');
-                    expect(resp).to.respondTo('then');
-                    expect(resp).to.respondTo('catch');
-                    resp
-                    .then(function(info) { })
-                    .catch(function(err) { })
-                    .then(function() { done(); });
-                });
-                it('should resolve to an object', function(done) {
-                    db.purge('test_doc')
-                    .then(function(info) {
-                        console.log('purge returned ' + JSON.stringify(info));
-                        expect(info).to.be.an('object');
-                        done();
-                    })
-                    .catch(function(err) {
-                        console.log('purge test_doc failed');
-                        throw err;
-                    })
-                });
-            });
-
-            describe('Method db.put', function() {
-                it('should return a promise', function(done) {
-                    var resp = db.put('xxx', {
-                        _id: 'xxx'
-                    });
-                    expect(resp).to.respondTo('then');
-                    expect(resp).to.respondTo('catch');
-                    resp
-                    .then(function(info) { })
-                    .catch(function(err) { console.log('post test_doc2 failed'); })
-                    .then(function() { done(); });
-                });
-                it('should resolve to an object', function(done) {
-                    db.put('yyy', {
-                        _id: 'yyy'
-                    })
-                    .then(function(info) {
-                        console.log('put returned ' + JSON.stringify(info));
-                        expect(info).to.be.an('object');
-                        done();
-                    })
-                    .catch(function(err) {
-                        console.log('put xxx failed', err);
-                        throw err;
-                    })
-                });
-            });
-
-            describe('Method db.soft_delete', function() {
-                it('should return a promise', function(done) {
-                    var resp = db.soft_delete({
-                        _id: 'xxx'
-                    });
-                    expect(resp).to.respondTo('then');
-                    expect(resp).to.respondTo('catch');
-                    resp
-                    .then(function(info) { })
-                    .catch(function(err) { })
-                    .then(function() { done(); });
-                });
-                it('should resolve to an object', function(done) {
-                    create_test_doc('test_doc')
-                    .then(function() {
-                        return db.get('test_doc')
-                    })
-                    .then(function(doc) {
-                        db.soft_delete(doc)
-                        .then(function(info) {
-                            console.log('soft delete info ' + JSON.stringify(info));
-                            expect(info).to.be.an('object');
-                            expect(info).to.include.all.keys(
-                                '_id',
-                                '_rev'
-                            );
-                            done();
-                        })
-                        .catch(function(err) {
-                            throw err;
-                            done();
-                        });
-                    });
-                });
-            });
-        });
-
-
-        describe('Method server.post', function() {
-            it('should return a promise', function(done) {
-                var resp = server.post('/' + test_db_opts.db_name + '/_bulk_docs', {
-                    all_or_nothing: true,
-                    docs: [ {
-                        _id: 'test_doc4',
-                        when: new Date().toISOString()
-                    } ]
-                });
-                expect(resp).to.respondTo('then');
-                expect(resp).to.respondTo('catch');
-                resp
-                .then(function(info) { })
-                .catch(function(err) { console.log('post test_doc4 failed'); })
-                .then(function() { done(); });
-            });
-            it('should resolve to an object', function(done) {
-                var resp = server.post('/' + test_db_opts.db_name + '/_bulk_docs', {
-                    all_or_nothing: true,
-                    docs: [ {
-                        _id: 'test_doc5',
-                        when: new Date().toISOString()
-                    } ]
-                })
-                .then(function(info) {
-                    expect(info).to.be.an('array');
-                    done();
-                })
-                .catch(function(err) {
-                    console.log('post test_doc5 failed');
-                    throw err;
-                })
-            });
-        });
-    });
+  changes.on('cancelled', () => {
+    console.log('got cancelled');
+    t.equal(nChanges, 10, '10 changes');
+    t.end();
+  });
 });
