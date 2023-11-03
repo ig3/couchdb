@@ -109,7 +109,6 @@ Changes.prototype.connect = function () {
     }
   })
   .on('error', function (error) {
-    console.log('error: ', error);
     self.emit('error', error);
     self.reconnect();
   }).end();
@@ -208,12 +207,7 @@ Database.prototype.soft_delete = function (doc) {
 
   return this.put(doc._id, doc)
   .then(function (info) {
-    console.log('put returned ' + JSON.stringify(info));
-    return self.get(doc._id + '?rev=' + info.rev)
-    .catch(function (err) {
-      console.log('get after delete failed with ', err);
-      throw err;
-    });
+    return self.get(doc._id + '?rev=' + info.rev);
   });
 };
 

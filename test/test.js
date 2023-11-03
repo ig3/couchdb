@@ -22,11 +22,9 @@ t.test('connect', t => {
   nock('http://localhost:5984')
   .get(
     uri => {
-      console.log('nock url: ', uri);
       return uri === '/';
     },
     body => {
-      console.log('nock body: ', body);
       return true;
     }
   )
@@ -44,7 +42,6 @@ t.test('connect', t => {
   t.equal(typeof x.then, 'function', 'returns a promise');
   t.equal(typeof x.catch, 'function', 'returns a promise');
   x.then(result => {
-    console.log('result: ', result);
     t.equal(typeof result, 'object', 'resolves to an object');
     t.equal(result.couchdb, 'Welcome', 'returns welcome message');
     t.end();
@@ -56,12 +53,10 @@ t.test('server.post', t => {
   nock('http://localhost:5984')
   .post(
     uri => { // This will be called twice
-      console.log('nock url: ', uri);
       t.equal(uri, '/test/_bulk_docs', 'uri');
       return true;
     },
     body => {
-      console.log('nock body: ', body);
       // { docs: [ { _id: 'test_doc1', when: '2023-11-03T08:28:37.996Z' } ] }
       t.equal(typeof body, 'object', 'body type');
       t.equal(typeof body.docs, 'object', 'body contains docs');
@@ -87,7 +82,6 @@ t.test('server.post', t => {
     }]
   })
   .then(info => {
-    console.log('info: ', info);
     t.pass('should resolve');
     // [{"ok":true,"id":"test_doc1","rev":"1-9a4921b3df5cd5788e4ff31362f92f29"}]\n'
     t.equal(info[0].ok, true, 'should succeed');
@@ -97,7 +91,6 @@ t.test('server.post', t => {
   .catch(err => {
     console.log('err: ', err);
     t.fail('should not reject');
-    console.log('err: ', err);
     t.end();
   });
 });
@@ -107,12 +100,10 @@ t.test('db.post', t => {
   nock('http://localhost:5984')
   .post(
     uri => { // This will be called twice
-      console.log('nock url: ', uri);
       t.equal(uri, '/test/_bulk_docs', 'uri');
       return true;
     },
     body => {
-      console.log('nock body: ', body);
       // { docs: [ { _id: 'test_doc1', when: '2023-11-03T08:28:37.996Z' } ] }
       t.equal(typeof body, 'object', 'body type');
       t.equal(typeof body.docs, 'object', 'body contains docs');
@@ -136,8 +127,6 @@ t.test('db.post', t => {
     username: 'test',
     password: 'test'
   });
-  console.log('XXXXXXXXXXXXX');
-  console.log('db username: ', db.username);
   db.post('_bulk_docs', {
     docs: [{
       _id: 'test_doc1',
@@ -145,7 +134,6 @@ t.test('db.post', t => {
     }]
   })
   .then(info => {
-    console.log('info: ', info);
     t.pass('should resolve');
     // [{"ok":true,"id":"test_doc1","rev":"1-9a4921b3df5cd5788e4ff31362f92f29"}]\n'
     t.equal(info[0].ok, true, 'should succeed');
@@ -155,7 +143,6 @@ t.test('db.post', t => {
   .catch(err => {
     console.log('err: ', err);
     t.fail('should not reject');
-    console.log('err: ', err);
     t.end();
   });
 });
@@ -165,12 +152,10 @@ t.test('db.soft_delete', t => {
   nock('http://localhost:5984')
   .put(
     uri => { // This will be called twice
-      console.log('nock url: ', uri);
       t.equal(uri, '/test/xxx', 'uri');
       return true;
     },
     body => {
-      console.log('nock body: ', body);
       // { docs: [ { _id: 'test_doc1', when: '2023-11-03T08:28:37.996Z' } ] }
       t.equal(typeof body, 'object', 'body type');
       t.equal(body._id, 'xxx', 'body._id');
@@ -185,7 +170,6 @@ t.test('db.soft_delete', t => {
   })
   .get(
     uri => { // This will be called twice
-      console.log('nock get url: ', uri);
       t.equal(uri, '/test/xxx', 'uri');
       return true;
     }
@@ -208,13 +192,10 @@ t.test('db.soft_delete', t => {
     username: 'test',
     password: 'test'
   });
-  console.log('XXXXXXXXXXXXX');
-  console.log('db username: ', db.username);
   db.soft_delete({
     _id: 'xxx'
   })
   .then(info => {
-    console.log('info: ', info);
     t.pass('should resolve');
     t.equal(info._rev, 'new rev', 'document revision');
     t.equal(info.deleted_time, 'some time', 'document revision');
@@ -223,7 +204,6 @@ t.test('db.soft_delete', t => {
   .catch(err => {
     console.log('err: ', err);
     t.fail('should not reject');
-    console.log('err: ', err);
     t.end();
   });
 });
@@ -233,7 +213,6 @@ t.test('db.purge', t => {
   nock('http://localhost:5984')
   .get(
     uri => { // This will be called twice
-      console.log('nock url: ', uri);
       t.equal(uri, '/test/xxx', 'uri');
       return true;
     }
@@ -255,7 +234,6 @@ t.test('db.purge', t => {
   })
   .post(
     uri => { // This will be called twice
-      console.log('nock post url: ', uri);
       t.equal(uri, '/test/_purge', 'uri');
       return true;
     }
@@ -280,13 +258,9 @@ t.test('db.purge', t => {
     username: 'test',
     password: 'test'
   });
-  console.log('XXXXXXXXXXXXX');
-  console.log('db username: ', db.username);
   db.purge('xxx')
   .then(info => {
     // { purge_seq: null, purged: { xxx: [ '3-asdf' ] } }
-    console.log('info: ', info);
-    console.log('typeof info: ', typeof info);
     t.pass('should resolve');
     t.equal(info.purge_seq, null, 'null purge sequence');
     t.equal(typeof info.purged.xxx, 'object', 'document id');
@@ -296,7 +270,6 @@ t.test('db.purge', t => {
   .catch(err => {
     console.log('err: ', err);
     t.fail('should not reject');
-    console.log('err: ', err);
     t.end();
   });
 });
@@ -306,13 +279,11 @@ t.test('db.changes', t => {
   nock('http://localhost:5984')
   .get(
     uri => { // This will be called twice
-      console.log('nock url: ', uri);
       t.equal(uri, '/test/_changes', 'uri');
       return true;
     }
   )
   .query(query => {
-    console.log('query: ', query);
     t.equal(query.feed, 'continuous', 'query feed');
     t.equal(query.heartbeat, '30000', 'query heartbeat');
     return true;
@@ -347,7 +318,6 @@ t.test('db.changes', t => {
   )
   .post(
     uri => { // This will be called twice
-      console.log('nock post url: ', uri);
       t.equal(uri, '/test/_purge', 'uri');
       return true;
     }
@@ -372,13 +342,10 @@ t.test('db.changes', t => {
     username: 'test',
     password: 'test'
   });
-  console.log('XXXXXXXXXXXXX');
-  console.log('db username: ', db.username);
   const changes = db.changes();
 
   let nChanges = 0;
   changes.on('change', change => {
-    console.log('got change: ', change);
     nChanges++;
   });
 
