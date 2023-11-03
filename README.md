@@ -9,7 +9,7 @@ Entrain's CouchDB client
 Use [npm](https://npmjs.com/) to install.
 
 ```sh
-npm install entrain-couchdb --save
+npm install @ig3/couchdb
 ```
 
 ## Table of contents
@@ -29,10 +29,10 @@ npm install entrain-couchdb --save
 
 ## Getting started
 
-To use `entrain-couchdb` you need to connect to your CouchDB server:
+To use `@ig3/couchdb` you need to connect to your CouchDB server:
 
 ```js
-var couch = require('entrain-couchdb');
+var couch = require('@ig3/couchdb');
 var server = couch.server({
     hostname: 'localhost',
     port:     5984,
@@ -53,11 +53,11 @@ server.get('/')
 
 ## Configuration
 
-To configure entrain-couchdb to access your CouchDB server:
+To configure @ig3/couchdb to access your CouchDB server:
 
 
 ```js
-var couch = require('entrain-couchdb');
+var couch = require('@ig3/couchdb');
 var server = couch.server({
     hostname: 'localhost',
     port:     5984,
@@ -70,7 +70,7 @@ var server = couch.server({
 Or
 
 ```js
-var server = require('entrain-couchdb').server({
+var server = require('@ig3/couchdb').server({
     hostname: 'localhost',
     port:     5984,
     protocol: 'http',
@@ -297,4 +297,4 @@ db.get('some_doc')
 
 ## License
 
-MIT, see [LICENSE.md](http://github.com/ig3/entrain-couchdb/blob/master/LICENSE.md) for details.
+MIT, see [LICENSE.md](http://github.com/ig3/couchdb/blob/master/LICENSE.md) for details.

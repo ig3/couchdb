@@ -1,7 +1,7 @@
 {
   "name": "@ig3/couchdb",
-  "version": "1.4.0",
-  "description": "Entrain's CouchDB client",
+  "version": "1.4.1",
+  "description": "Simple CouchDB client",
   "main": "index.js",
   "license": "MIT",
   "author": {
