@@ -28,7 +28,7 @@ Server.prototype.get = function (path, data) {
     }
   };
 
-  return rp(options);
+  return request(options);
 };
 
 function Database (opts) {
@@ -41,7 +41,7 @@ function Database (opts) {
 }
 
 Database.prototype.get = function (path, data) {
-  return rp({
+  return request({
     method: 'GET',
     uri: this.server.protocol + '://' +
             this.server.hostname + ':' + this.server.port +
@@ -156,7 +156,7 @@ Database.prototype.changes = function (opts) {
 };
 
 Database.prototype.post = function (path, data) {
-  return rp({
+  return request({
     method: 'POST',
     uri: this.server.protocol + '://' +
             this.server.hostname + ':' + this.server.port +
@@ -184,7 +184,7 @@ Database.prototype.purge = function (id) {
 };
 
 Database.prototype.put = function (path, data) {
-  return rp({
+  return request({
     method: 'PUT',
     uri: this.server.protocol + '://' +
             this.server.hostname + ':' + this.server.port +
@@ -218,7 +218,7 @@ Server.prototype.db = function (opts) {
 };
 
 Server.prototype.post = function (path, data) {
-  return rp({
+  return request({
     method: 'POST',
     uri: this.protocol + '://' + this.hostname + ':' + this.port + path,
     body: data,
@@ -234,7 +234,7 @@ exports.server = function (opts) {
   return new Server(opts);
 };
 
-function rp (opts) {
+function request (opts) {
   return new Promise((resolve, reject) => {
     const url = new URL(opts.uri);
 
