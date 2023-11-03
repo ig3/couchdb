@@ -1,5 +1,5 @@
 {
-  "name": "entrain-couchdb",
+  "name": "@ig3/couchdb",
   "version": "1.4.0",
   "description": "Entrain's CouchDB client",
   "main": "index.js",
