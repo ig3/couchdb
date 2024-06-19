@@ -268,5 +268,6 @@ db.get('some_doc')
  * Eliminate dependencies other than node core modules
  * Rewrite tests using multi-tape, tape and nock
 
-### 2.0.1 - WIP
+### 2.0.1 - 20240620
  * Minimize published package size
+ * Update dependencies
