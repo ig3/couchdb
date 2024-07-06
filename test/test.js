@@ -46,6 +46,65 @@ t.test('connect', t => {
   });
 });
 
+t.test('get throws on error reponse', t => {
+  nock.cleanAll();
+  nock('http://localhost:5984')
+  .get(
+    uri => {
+      return uri === '/bad-path';
+    },
+    body => {
+      return true;
+    }
+  )
+  .reply(404, 'invalid request');
+
+  const couchdb = require('..')({
+    hostname: 'localhost',
+    port: 5984,
+  });
+  const x = couchdb.get('/bad-path');
+  x.then(result => {
+    t.fail('should not resolve');
+    t.end();
+  })
+  .catch(err => {
+    t.pass('should reject');
+    t.equal(err.message, 'request failed: 404', 'reject on 404');
+    t.equal(err.response, 'invalid request', 'error includes response body');
+    t.end();
+  });
+});
+
+t.test('get throws on request error', t => {
+  nock.cleanAll();
+  nock('http://localhost:5984')
+  .get(
+    uri => {
+      return uri === '/bad-path';
+    },
+    body => {
+      return true;
+    }
+  )
+  .reply(404, 'invalid request');
+
+  const couchdb = require('..')({
+    hostname: 'localhost',
+    port: 5984,
+  });
+  const x = couchdb.get('/test');
+  x.then(result => {
+    t.fail('should not resolve');
+    t.end();
+  })
+  .catch(err => {
+    t.pass('should reject');
+    t.equal(err.code, 'ERR_NOCK_NO_MATCH', 'Error code is ERR_NOCK_NO_MATCH');
+    t.end();
+  });
+});
+
 t.test('server.post', t => {
   nock.cleanAll();
   nock('http://localhost:5984')
@@ -309,21 +368,7 @@ t.test('db.changes', t => {
     {
       Server: 'CouchDB/3.2.0',
     }
-  )
-  .post(
-    uri => { // This will be called twice
-      t.equal(uri, '/test/_purge', 'uri');
-      return true;
-    }
-  )
-  .reply(200, {
-    purge_seq: null,
-    purged: {
-      xxx: [
-        '3-asdf',
-      ],
-    },
-  });
+  );
   const couchdb = require('..')({
     hostname: 'localhost',
     port: 5984,
@@ -355,13 +400,13 @@ t.test('db.changes', t => {
   }, 5000);
 
   changes.on('cancelled', () => {
-    console.log('got cancelled');
+    t.pass('got cancelled event');
     t.equal(nChanges, 10, '10 changes');
     t.end();
   });
 });
 
-t.test('db.changes - with corrupt change', t => {
+t.test('db.changes - bad server', t => {
   nock.cleanAll();
   nock('http://localhost:5984')
   .get(
@@ -373,6 +418,235 @@ t.test('db.changes - with corrupt change', t => {
   .query(query => {
     t.equal(query.feed, 'continuous', 'query feed');
     t.equal(query.heartbeat, '30000', 'query heartbeat');
+    return true;
+  })
+  .reply(
+    200,
+    (uri, requestBody) => {
+      const { Readable } = require('stream');
+      const inStream = new Readable({
+        read () {},
+      });
+      inStream.push('{"seq":"1-g1AAAAB5eJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zEhnwKMpjAZIMDUDqP0htBnMiYy5QgN3INCkx0cQUm74sAJQtIFo","id":"b3775776561011de158fc6551c0004ac","changes":[{"rev":"1-59414e77c768bc202142ac82c2f129de"}]}\n');
+      inStream.push('{"seq":"2-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTGXOBAuyJlsnmBhaG2DTgMSaPBUgyNACp_yimGZkmJSaamGLTlwUAFcUoSQ","id":"71091c1418986a91aa593474b600476e","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}\n');
+      inStream.push(`{"seq":"3-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTmXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_1DTGMGmGZkmJSaamGLTlwUAFjUoSg","id":"71091c1418986a91aa593474b6007c28","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+{"seq":"5-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTmXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_1DTmMGmGZkmJSaamGLTlwUAFnkoTA","id":"test_doc1","changes":[{"rev":"2-85c07d92c45b53acc1bc9429c2b5f9d1"}]}
+{"seq":"6-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTmXOBAuyJlsnmBhaG2DTgMSaPBUgyNACp_yimGZkmJSaamGLTlwUAFukoTQ","id":"71091c1418986a91aa593474b6008b09","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+`);
+      inStream.push('{"seq":"7-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTmXOBAuyJlsnmBhaG2DTg');
+      inStream.push(`MSaPBUgyNACp_1DTWMCmGZkmJSaamGLTlwUAFwsoTg","id":"71091c1418986a91aa593474b60017f0","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+`);
+      inStream.push('\r\r\r');
+      inStream.push(`{"seq":"8-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTWXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_yimGZkmJSaamGLTlwUAF3soTw","id":"71091c1418986a91aa593474b600b7a0","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+{"seq":"9-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTWXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_1DTWMGmGZkmJSaamGLTlwUAF50oUA","id":"71091c1418986a91aa593474b600308c","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+{"seq":"10-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTWXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_1DT2MCmGZkmJSaamGLTlwUAF78oUQ","id":"71091c1418986a91aa593474b6005a50","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+{"seq":"11-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTWXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_1DT2MGmGZkmJSaamGLTlwUAF-EoUg","id":"71091c1418986a91aa593474b600b396","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+`);
+      return inStream;
+    },
+    {
+      Server: 'BAD SERVER/3.2.0',
+    }
+  );
+  const couchdb = require('..')({
+    hostname: 'localhost',
+    port: 5984,
+    username: 'test',
+    password: 'test',
+  });
+  const db = couchdb.db({
+    db_name: 'test',
+    username: 'test',
+    password: 'test',
+  });
+  const changes = db.changes();
+
+  let nChanges = 0;
+  changes.on('change', change => {
+    nChanges++;
+  });
+
+  changes.on('error', err => {
+    t.equal(err.message, 'Not CouchDB', 'Error message is Not CouchDB');
+  });
+
+  changes.on('reconnect', () => {
+    t.pass('should reconnect');
+  });
+
+  setTimeout(() => {
+    changes.cancel();
+  }, 5000);
+
+  changes.on('cancelled', () => {
+    t.pass('got cancelled event');
+    t.equal(nChanges, 0, '0 changes');
+    t.end();
+  });
+});
+
+t.test('db.changes.reconnect', t => {
+  nock.cleanAll();
+  nock('http://localhost:5984')
+  .get('/test/_changes')
+  .query(query => {
+    t.equal(query.feed, 'continuous', 'query feed continuous');
+    t.equal(query.heartbeat, '30000', 'query heartbeat 30000');
+    return true;
+  })
+  .reply(
+    200,
+    (uri, requestBody) => {
+      const { Readable } = require('stream');
+      const inStream = new Readable({
+        read () {},
+      });
+      inStream.push('{"seq":"1-g1AAAAB5eJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zEhnwKMpjAZIMDUDqP0htBnMiYy5QgN3INCkx0cQUm74sAJQtIFo","id":"b3775776561011de158fc6551c0004ac","changes":[{"rev":"1-59414e77c768bc202142ac82c2f129de"}]}\n');
+      inStream.push('{"seq":"2-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTGXOBAuyJlsnmBhaG2DTgMSaPBUgyNACp_yimGZkmJSaamGLTlwUAFcUoSQ","id":"71091c1418986a91aa593474b600476e","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}\n');
+      inStream.push(`{"seq":"3-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTmXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_1DTGMGmGZkmJSaamGLTlwUAFjUoSg","id":"71091c1418986a91aa593474b6007c28","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+{"seq":"5-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTmXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_1DTmMGmGZkmJSaamGLTlwUAFnkoTA","id":"test_doc1","changes":[{"rev":"2-85c07d92c45b53acc1bc9429c2b5f9d1"}]}
+{"seq":"6-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTmXOBAuyJlsnmBhaG2DTgMSaPBUgyNACp_yimGZkmJSaamGLTlwUAFukoTQ","id":"71091c1418986a91aa593474b6008b09","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+`);
+      inStream.push('{"seq":"7-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTmXOBAuyJlsnmBhaG2DTg');
+      inStream.push(`MSaPBUgyNACp_1DTWMCmGZkmJSaamGLTlwUAFwsoTg","id":"71091c1418986a91aa593474b60017f0","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+`);
+      inStream.push('\r\r\r');
+      inStream.push(`{"seq":"8-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTWXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_yimGZkmJSaamGLTlwUAF3soTw","id":"71091c1418986a91aa593474b600b7a0","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+{"seq":"9-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTWXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_1DTWMGmGZkmJSaamGLTlwUAF50oUA","id":"71091c1418986a91aa593474b600308c","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+{"seq":"10-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTWXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_1DT2MCmGZkmJSaamGLTlwUAF78oUQ","id":"71091c1418986a91aa593474b6005a50","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+{"seq":"11-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTWXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_1DT2MGmGZkmJSaamGLTlwUAF-EoUg","id":"71091c1418986a91aa593474b600b396","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+`);
+      return inStream;
+    },
+    {
+      Server: 'CouchDB/3.2.0',
+    }
+  )
+  .get('/test/_changes')
+  .query(query => {
+    t.equal(query.feed, 'continuous', 'query feed continuous');
+    t.equal(query.heartbeat, '30000', 'query heartbeat 30000');
+    return true;
+  })
+  .reply(
+    200,
+    (uri, requestBody) => {
+      const { Readable } = require('stream');
+      const inStream = new Readable({
+        read () {},
+      });
+      inStream.push('{"seq":"1-g1AAAAB5eJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zEhnwKMpjAZIMDUDqP0htBnMiYy5QgN3INCkx0cQUm74sAJQtIFo","id":"b3775776561011de158fc6551c0004ac","changes":[{"rev":"1-59414e77c768bc202142ac82c2f129de"}]}\n');
+      inStream.push('{"seq":"2-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTGXOBAuyJlsnmBhaG2DTgMSaPBUgyNACp_yimGZkmJSaamGLTlwUAFcUoSQ","id":"71091c1418986a91aa593474b600476e","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}\n');
+      inStream.push(`{"seq":"3-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTmXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_1DTGMGmGZkmJSaamGLTlwUAFjUoSg","id":"71091c1418986a91aa593474b6007c28","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+{"seq":"5-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTmXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_1DTmMGmGZkmJSaamGLTlwUAFnkoTA","id":"test_doc1","changes":[{"rev":"2-85c07d92c45b53acc1bc9429c2b5f9d1"}]}
+{"seq":"6-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTmXOBAuyJlsnmBhaG2DTgMSaPBUgyNACp_yimGZkmJSaamGLTlwUAFukoTQ","id":"71091c1418986a91aa593474b6008b09","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+`);
+      inStream.push('{"seq":"7-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTmXOBAuyJlsnmBhaG2DTg');
+      inStream.push(`MSaPBUgyNACp_1DTWMCmGZkmJSaamGLTlwUAFwsoTg","id":"71091c1418986a91aa593474b60017f0","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+`);
+      inStream.push('\r\r\r');
+      inStream.push(`{"seq":"8-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTWXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_yimGZkmJSaamGLTlwUAF3soTw","id":"71091c1418986a91aa593474b600b7a0","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+{"seq":"9-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTWXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_1DTWMGmGZkmJSaamGLTlwUAF50oUA","id":"71091c1418986a91aa593474b600308c","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+{"seq":"10-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTWXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_1DT2MCmGZkmJSaamGLTlwUAF78oUQ","id":"71091c1418986a91aa593474b6005a50","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+{"seq":"11-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTWXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_1DT2MGmGZkmJSaamGLTlwUAF-EoUg","id":"71091c1418986a91aa593474b600b396","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+`);
+      return inStream;
+    },
+    {
+      Server: 'CouchDB/3.2.0',
+    }
+  )
+  .get('/test/_changes')
+  .query(query => {
+    t.equal(query.feed, 'continuous', 'query feed continuous');
+    t.equal(query.heartbeat, '30000', 'query heartbeat 30000');
+    return true;
+  })
+  .reply(
+    200,
+    (uri, requestBody) => {
+      const { Readable } = require('stream');
+      const inStream = new Readable({
+        read () {},
+      });
+      inStream.push('{"seq":"1-g1AAAAB5eJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zEhnwKMpjAZIMDUDqP0htBnMiYy5QgN3INCkx0cQUm74sAJQtIFo","id":"b3775776561011de158fc6551c0004ac","changes":[{"rev":"1-59414e77c768bc202142ac82c2f129de"}]}\n');
+      inStream.push('{"seq":"2-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTGXOBAuyJlsnmBhaG2DTgMSaPBUgyNACp_yimGZkmJSaamGLTlwUAFcUoSQ","id":"71091c1418986a91aa593474b600476e","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}\n');
+      inStream.push(`{"seq":"3-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTmXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_1DTGMGmGZkmJSaamGLTlwUAFjUoSg","id":"71091c1418986a91aa593474b6007c28","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+{"seq":"5-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTmXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_1DTmMGmGZkmJSaamGLTlwUAFnkoTA","id":"test_doc1","changes":[{"rev":"2-85c07d92c45b53acc1bc9429c2b5f9d1"}]}
+{"seq":"6-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTmXOBAuyJlsnmBhaG2DTgMSaPBUgyNACp_yimGZkmJSaamGLTlwUAFukoTQ","id":"71091c1418986a91aa593474b6008b09","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+`);
+      inStream.push('{"seq":"7-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTmXOBAuyJlsnmBhaG2DTg');
+      inStream.push(`MSaPBUgyNACp_1DTWMCmGZkmJSaamGLTlwUAFwsoTg","id":"71091c1418986a91aa593474b60017f0","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+`);
+      inStream.push('\r\r\r');
+      inStream.push(`{"seq":"8-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTWXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_yimGZkmJSaamGLTlwUAF3soTw","id":"71091c1418986a91aa593474b600b7a0","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+{"seq":"9-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTWXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_1DTWMGmGZkmJSaamGLTlwUAF50oUA","id":"71091c1418986a91aa593474b600308c","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+{"seq":"10-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTWXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_1DT2MCmGZkmJSaamGLTlwUAF78oUQ","id":"71091c1418986a91aa593474b6005a50","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+{"seq":"11-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTWXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_1DT2MGmGZkmJSaamGLTlwUAF-EoUg","id":"71091c1418986a91aa593474b600b396","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+`);
+      return inStream;
+    },
+    {
+      Server: 'CouchDB/3.2.0',
+    }
+  );
+
+  const couchdb = require('..')({
+    hostname: 'localhost',
+    port: 5984,
+    username: 'test',
+    password: 'test',
+  });
+  const db = couchdb.db({
+    db_name: 'test',
+    username: 'test',
+    password: 'test',
+  });
+  const changes = db.changes();
+
+  let nChanges = 0;
+  let nReconnects = 0;
+
+  changes.on('change', change => {
+    nChanges++;
+  });
+
+  changes.on('error', err => {
+    t.fail('should not emit error');
+    console.log('got a changes error: ', err);
+  });
+
+  changes.on('reconnect', () => {
+    console.log('reconnect');
+    nReconnects++;
+  });
+
+  changes.on('cancelled', () => {
+    console.log('got cancelled');
+    t.equal(nChanges, 20, '20 changes');
+    t.equal(nReconnects, 1, '1 reconnect');
+    t.end();
+  });
+
+  changes.reconnect();
+
+  setTimeout(() => {
+    changes.cancel();
+  }, 15000);
+});
+
+t.test('db.changes - with corrupt change', t => {
+  nock.cleanAll();
+  nock('http://localhost:5984')
+  .get(
+    uri => {
+      t.equal(uri, '/test/_changes', 'get /test/_changes');
+      return true;
+    }
+  )
+  .query(query => {
+    t.equal(query.feed, 'continuous', 'query feed continuouse');
+    t.equal(query.heartbeat, '30000', 'query heartbeat 30000');
     return true;
   })
   .reply(
@@ -405,7 +679,7 @@ t.test('db.changes - with corrupt change', t => {
   )
   .post(
     uri => { // This will be called twice
-      t.equal(uri, '/test/_purge', 'uri');
+      t.equal(uri, '/test/_purge', 'post /test/_purge');
       return true;
     }
   )
