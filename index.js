@@ -24,8 +24,8 @@ Server.prototype.get = function (path, data) {
     json: true,
     auth: {
       username: this.username,
-      password: this.password
-    }
+      password: this.password,
+    },
   };
 
   return request(options);
@@ -50,8 +50,8 @@ Database.prototype.get = function (path, data) {
     json: true,
     auth: {
       username: this.username,
-      password: this.password
-    }
+      password: this.password,
+    },
   });
 };
 
@@ -93,7 +93,7 @@ Changes.prototype.connect = function () {
     host: this.hostname,
     port: this.port,
     path: path,
-    auth: auth
+    auth: auth,
   }, function (res) {
     self.couchdbConnection = res;
 
@@ -165,8 +165,8 @@ Database.prototype.post = function (path, data) {
     json: true,
     auth: {
       username: this.username,
-      password: this.password
-    }
+      password: this.password,
+    },
   });
 };
 
@@ -193,8 +193,8 @@ Database.prototype.put = function (path, data) {
     json: true,
     auth: {
       username: this.username,
-      password: this.password
-    }
+      password: this.password,
+    },
   });
 };
 
@@ -225,8 +225,8 @@ Server.prototype.post = function (path, data) {
     json: true,
     auth: {
       username: this.username,
-      password: this.password
-    }
+      password: this.password,
+    },
   });
 };
 
@@ -242,7 +242,7 @@ function request (opts) {
       host: url.hostname,
       port: url.port || 80,
       path: url.pathname,
-      method: opts.method
+      method: opts.method,
     };
     if (
       opts.auth &&

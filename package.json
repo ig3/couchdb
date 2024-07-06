@@ -18,7 +18,7 @@
     "tape": "^5.8.1"
   },
   "scripts": {
-    "test": "eslint . && c8 --all multi-tape test/*.js"
+    "test": "eslint . && c8 multi-tape test/*.js"
   },
   "keywords": [],
   "repository": {

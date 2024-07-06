@@ -29,12 +29,12 @@ t.test('connect', t => {
   )
   .reply(200, {
     couchdb: 'Welcome',
-    silly: 'nonsense'
+    silly: 'nonsense',
   });
 
   const couchdb = require('..')({
     hostname: 'localhost',
-    port: 5984
+    port: 5984,
   });
   const x = couchdb.get('/');
   t.equal(typeof x.then, 'function', 'returns a promise');
@@ -64,19 +64,19 @@ t.test('server.post', t => {
     }
   )
   .reply(200, [
-    { ok: true, id: 'test_doc1', rev: '1-9a4921b3df5cd5788e4ff31362f92f29' }
+    { ok: true, id: 'test_doc1', rev: '1-9a4921b3df5cd5788e4ff31362f92f29' },
   ]);
   const couchdb = require('..')({
     hostname: 'localhost',
     port: 5984,
     username: 'test',
-    password: 'test'
+    password: 'test',
   });
   couchdb.post('/test/_bulk_docs', {
     docs: [{
       _id: 'test_doc1',
-      data: 'This is a test'
-    }]
+      data: 'This is a test',
+    }],
   })
   .then(info => {
     t.pass('should resolve');
@@ -110,24 +110,24 @@ t.test('db.post', t => {
     }
   )
   .reply(201, [
-    { ok: true, id: 'test_doc1', rev: '1-9a4921b3df5cd5788e4ff31362f92f29' }
+    { ok: true, id: 'test_doc1', rev: '1-9a4921b3df5cd5788e4ff31362f92f29' },
   ]);
   const couchdb = require('..')({
     hostname: 'localhost',
     port: 5984,
     username: 'test',
-    password: 'test'
+    password: 'test',
   });
   const db = couchdb.db({
     db_name: 'test',
     username: 'test',
-    password: 'test'
+    password: 'test',
   });
   db.post('_bulk_docs', {
     docs: [{
       _id: 'test_doc1',
-      data: 'This is a test'
-    }]
+      data: 'This is a test',
+    }],
   })
   .then(info => {
     t.pass('should resolve');
@@ -162,7 +162,7 @@ t.test('db.soft_delete', t => {
   .reply(200, {
     ok: true,
     id: 'xxx',
-    rev: '1-9a4921b3df5cd5788e4ff31362f92f29'
+    rev: '1-9a4921b3df5cd5788e4ff31362f92f29',
   })
   .get(
     uri => { // This will be called twice
@@ -174,21 +174,21 @@ t.test('db.soft_delete', t => {
     _id: 'xxx',
     _deleted: true,
     deleted_time: 'some time',
-    _rev: 'new rev'
+    _rev: 'new rev',
   });
   const couchdb = require('..')({
     hostname: 'localhost',
     port: 5984,
     username: 'test',
-    password: 'test'
+    password: 'test',
   });
   const db = couchdb.db({
     db_name: 'test',
     username: 'test',
-    password: 'test'
+    password: 'test',
   });
   db.soft_delete({
-    _id: 'xxx'
+    _id: 'xxx',
   })
   .then(info => {
     t.pass('should resolve');
@@ -219,13 +219,13 @@ t.test('db.purge', t => {
     _revs_info: [
       {
         rev: '3-asdf',
-        status: 'available'
+        status: 'available',
       },
       {
         rev: '2-asdf',
-        status: 'available'
-      }
-    ]
+        status: 'available',
+      },
+    ],
   })
   .post(
     uri => { // This will be called twice
@@ -237,20 +237,20 @@ t.test('db.purge', t => {
     purge_seq: null,
     purged: {
       xxx: [
-        '3-asdf'
-      ]
-    }
+        '3-asdf',
+      ],
+    },
   });
   const couchdb = require('..')({
     hostname: 'localhost',
     port: 5984,
     username: 'test',
-    password: 'test'
+    password: 'test',
   });
   const db = couchdb.db({
     db_name: 'test',
     username: 'test',
-    password: 'test'
+    password: 'test',
   });
   db.purge('xxx')
   .then(info => {
@@ -287,7 +287,7 @@ t.test('db.changes', t => {
     (uri, requestBody) => {
       const { Readable } = require('stream');
       const inStream = new Readable({
-        read () {}
+        read () {},
       });
       inStream.push('{"seq":"1-g1AAAAB5eJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zEhnwKMpjAZIMDUDqP0htBnMiYy5QgN3INCkx0cQUm74sAJQtIFo","id":"b3775776561011de158fc6551c0004ac","changes":[{"rev":"1-59414e77c768bc202142ac82c2f129de"}]}\n');
       inStream.push('{"seq":"2-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTGXOBAuyJlsnmBhaG2DTgMSaPBUgyNACp_yimGZkmJSaamGLTlwUAFcUoSQ","id":"71091c1418986a91aa593474b600476e","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}\n');
@@ -307,7 +307,7 @@ t.test('db.changes', t => {
       return inStream;
     },
     {
-      Server: 'CouchDB/3.2.0'
+      Server: 'CouchDB/3.2.0',
     }
   )
   .post(
@@ -320,20 +320,20 @@ t.test('db.changes', t => {
     purge_seq: null,
     purged: {
       xxx: [
-        '3-asdf'
-      ]
-    }
+        '3-asdf',
+      ],
+    },
   });
   const couchdb = require('..')({
     hostname: 'localhost',
     port: 5984,
     username: 'test',
-    password: 'test'
+    password: 'test',
   });
   const db = couchdb.db({
     db_name: 'test',
     username: 'test',
-    password: 'test'
+    password: 'test',
   });
   const changes = db.changes();
 
@@ -357,6 +357,102 @@ t.test('db.changes', t => {
   changes.on('cancelled', () => {
     console.log('got cancelled');
     t.equal(nChanges, 10, '10 changes');
+    t.end();
+  });
+});
+
+t.test('db.changes - with corrupt change', t => {
+  nock.cleanAll();
+  nock('http://localhost:5984')
+  .get(
+    uri => { // This will be called twice
+      t.equal(uri, '/test/_changes', 'uri');
+      return true;
+    }
+  )
+  .query(query => {
+    t.equal(query.feed, 'continuous', 'query feed');
+    t.equal(query.heartbeat, '30000', 'query heartbeat');
+    return true;
+  })
+  .reply(
+    200,
+    (uri, requestBody) => {
+      const { Readable } = require('stream');
+      const inStream = new Readable({
+        read () {},
+      });
+      inStream.push('{"seq":"1-g1AAAAB5eJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zEhnwKMpjAZIMDUDqP0htBnMiYy5QgN3INCkx0cQUm74sAJQtIFo","id":"b3775776561011de158fc6551c0004ac","changes":[{"rev":"1-59414e77c768bc202142ac82c2f129de"}],bad json}\n');
+      inStream.push('{"seq":"2-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTGXOBAuyJlsnmBhaG2DTgMSaPBUgyNACp_yimGZkmJSaamGLTlwUAFcUoSQ","id":"71091c1418986a91aa593474b600476e","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}\n');
+      inStream.push(`{"seq":"3-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTmXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_1DTGMGmGZkmJSaamGLTlwUAFjUoSg","id":"71091c1418986a91aa593474b6007c28","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+{"seq":"5-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTmXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_1DTmMGmGZkmJSaamGLTlwUAFnkoTA","id":"test_doc1","changes":[{"rev":"2-85c07d92c45b53acc1bc9429c2b5f9d1"}]}
+{"seq":"6-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTmXOBAuyJlsnmBhaG2DTgMSaPBUgyNACp_yimGZkmJSaamGLTlwUAFukoTQ","id":"71091c1418986a91aa593474b6008b09","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+`);
+      inStream.push('{"seq":"7-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTmXOBAuyJlsnmBhaG2DTg');
+      inStream.push(`MSaPBUgyNACp_1DTWMCmGZkmJSaamGLTlwUAFwsoTg","id":"71091c1418986a91aa593474b60017f0","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+`);
+      inStream.push('\r\r\r');
+      inStream.push(`{"seq":"8-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTWXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_yimGZkmJSaamGLTlwUAF3soTw","id":"71091c1418986a91aa593474b600b7a0","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+{"seq":"9-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTWXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_1DTWMGmGZkmJSaamGLTlwUAF50oUA","id":"71091c1418986a91aa593474b600308c","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+{"seq":"10-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTWXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_1DT2MCmGZkmJSaamGLTlwUAF78oUQ","id":"71091c1418986a91aa593474b6005a50","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+{"seq":"11-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTWXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_1DT2MGmGZkmJSaamGLTlwUAF-EoUg","id":"71091c1418986a91aa593474b600b396","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+`);
+      return inStream;
+    },
+    {
+      Server: 'CouchDB/3.2.0',
+    }
+  )
+  .post(
+    uri => { // This will be called twice
+      t.equal(uri, '/test/_purge', 'uri');
+      return true;
+    }
+  )
+  .reply(200, {
+    purge_seq: null,
+    purged: {
+      xxx: [
+        '3-asdf',
+      ],
+    },
+  });
+  const couchdb = require('..')({
+    hostname: 'localhost',
+    port: 5984,
+    username: 'test',
+    password: 'test',
+  });
+  const db = couchdb.db({
+    db_name: 'test',
+    username: 'test',
+    password: 'test',
+  });
+  const changes = db.changes();
+
+  let nChanges = 0;
+  let nErrors = 0;
+  changes.on('change', change => {
+    nChanges++;
+  });
+
+  changes.on('error', () => {
+    t.pass('should emit error');
+    nErrors++;
+  });
+
+  changes.on('reconnect', () => {
+    t.fail('should not reconnect');
+  });
+
+  setTimeout(() => {
+    changes.cancel();
+  }, 5000);
+
+  changes.on('cancelled', () => {
+    console.log('got cancelled');
+    t.equal(nChanges, 9, '9 changes');
+    t.equal(nErrors, 1, '1 error');
     t.end();
   });
 });
