@@ -202,6 +202,42 @@ t.test('db.post', t => {
   });
 });
 
+t.test('db - no options', t => {
+  nock.cleanAll();
+  nock('http://localhost:5984')
+  .post(
+    uri => { // This will be called twice
+      t.equal(uri, '/test/_bulk_docs', 'uri');
+      return true;
+    },
+    body => {
+      // { docs: [ { _id: 'test_doc1', when: '2023-11-03T08:28:37.996Z' } ] }
+      t.equal(typeof body, 'object', 'body type');
+      t.equal(typeof body.docs, 'object', 'body contains docs');
+      t.equal(body.docs[0]._id, 'test_doc1', 'docs contains test_doc1');
+      t.equal(body.docs[0].data, 'This is a test', 'document content');
+      return true;
+    }
+  )
+  .reply(201, [
+    { ok: true, id: 'test_doc1', rev: '1-9a4921b3df5cd5788e4ff31362f92f29' },
+  ]);
+  const couchdb = require('..')({
+    hostname: 'localhost',
+    port: 5984,
+    username: 'test',
+    password: 'test',
+  });
+  try {
+    couchdb.db();
+    t.fail('should not succeed');
+  } catch (err) {
+    t.pass('should throw');
+    t.equal(err.message, 'Missing opts', 'Error: Missing opts');
+    t.end();
+  }
+});
+
 t.test('db.soft_delete', t => {
   nock.cleanAll();
   nock('http://localhost:5984')
