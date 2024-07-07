@@ -485,6 +485,82 @@ t.test('db.changes - bad server', t => {
   });
 });
 
+t.test('db.changes - no server header', t => {
+  nock.cleanAll();
+  nock('http://localhost:5984')
+  .get(
+    uri => { // This will be called twice
+      t.equal(uri, '/test/_changes', 'uri');
+      return true;
+    }
+  )
+  .query(query => {
+    t.equal(query.feed, 'continuous', 'query feed');
+    t.equal(query.heartbeat, '30000', 'query heartbeat');
+    return true;
+  })
+  .reply(
+    200,
+    (uri, requestBody) => {
+      const { Readable } = require('stream');
+      const inStream = new Readable({
+        read () {},
+      });
+      inStream.push('{"seq":"1-g1AAAAB5eJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zEhnwKMpjAZIMDUDqP0htBnMiYy5QgN3INCkx0cQUm74sAJQtIFo","id":"b3775776561011de158fc6551c0004ac","changes":[{"rev":"1-59414e77c768bc202142ac82c2f129de"}]}\n');
+      inStream.push('{"seq":"2-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTGXOBAuyJlsnmBhaG2DTgMSaPBUgyNACp_yimGZkmJSaamGLTlwUAFcUoSQ","id":"71091c1418986a91aa593474b600476e","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}\n');
+      inStream.push(`{"seq":"3-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTmXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_1DTGMGmGZkmJSaamGLTlwUAFjUoSg","id":"71091c1418986a91aa593474b6007c28","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+{"seq":"5-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTmXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_1DTmMGmGZkmJSaamGLTlwUAFnkoTA","id":"test_doc1","changes":[{"rev":"2-85c07d92c45b53acc1bc9429c2b5f9d1"}]}
+{"seq":"6-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTmXOBAuyJlsnmBhaG2DTgMSaPBUgyNACp_yimGZkmJSaamGLTlwUAFukoTQ","id":"71091c1418986a91aa593474b6008b09","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+`);
+      inStream.push('{"seq":"7-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTmXOBAuyJlsnmBhaG2DTg');
+      inStream.push(`MSaPBUgyNACp_1DTWMCmGZkmJSaamGLTlwUAFwsoTg","id":"71091c1418986a91aa593474b60017f0","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+`);
+      inStream.push('\r\r\r');
+      inStream.push(`{"seq":"8-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTWXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_yimGZkmJSaamGLTlwUAF3soTw","id":"71091c1418986a91aa593474b600b7a0","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+{"seq":"9-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTWXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_1DTWMGmGZkmJSaamGLTlwUAF50oUA","id":"71091c1418986a91aa593474b600308c","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+{"seq":"10-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTWXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_1DT2MCmGZkmJSaamGLTlwUAF78oUQ","id":"71091c1418986a91aa593474b6005a50","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+{"seq":"11-g1AAAACbeJzLYWBgYMpgTmEQTM4vTc5ISXIwNDLXMwBCwxyQVCJDUv3___-zMpgTWXKBAuyJlsnmBhaG2DTgMSaPBUgyNACp_1DT2MGmGZkmJSaamGLTlwUAF-EoUg","id":"71091c1418986a91aa593474b600b396","changes":[{"rev":"1-967a00dff5e02add41819138abb3284d"}]}
+`);
+      return inStream;
+    }
+  );
+  const couchdb = require('..')({
+    hostname: 'localhost',
+    port: 5984,
+    username: 'test',
+    password: 'test',
+  });
+  const db = couchdb.db({
+    db_name: 'test',
+    username: 'test',
+    password: 'test',
+  });
+  const changes = db.changes();
+
+  let nChanges = 0;
+  changes.on('change', change => {
+    nChanges++;
+  });
+
+  changes.on('error', err => {
+    t.equal(err.message, 'Not CouchDB', 'Error message is Not CouchDB');
+  });
+
+  changes.on('reconnect', () => {
+    t.pass('should reconnect');
+  });
+
+  setTimeout(() => {
+    changes.cancel();
+  }, 5000);
+
+  changes.on('cancelled', () => {
+    t.pass('got cancelled event');
+    t.equal(nChanges, 0, '0 changes');
+    t.end();
+  });
+});
+
 t.test('db.changes.reconnect', t => {
   nock.cleanAll();
   nock('http://localhost:5984')
