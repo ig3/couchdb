@@ -108,8 +108,10 @@ Changes.prototype.connect = function () {
     }
   })
   .on('error', function (error) {
-    self.emit('error', error);
-    self.reconnect();
+    if (!self.cancelled) {
+      self.emit('error', error);
+      self.reconnect();
+    }
   }).end();
 };
 
