@@ -272,6 +272,6 @@ db.get('some_doc')
  * Minimize published package size
  * Update dependencies
 
-### 2.0.2 - WIP
+### 2.0.2 - 20240709
  * Rewrite tests using node:test and node:assert
  * Rewrite tests using tape and express instead of nock
