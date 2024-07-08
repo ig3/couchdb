@@ -10,10 +10,10 @@
     "url": "https://github.com/ig3"
   },
   "devDependencies": {
-    "@ig3/eslint-config-entrain": "^4.0.1",
+    "@ig3/eslint-config-entrain": "^4.0.2",
     "c8": "^10.1.2",
     "express": "^4.19.2",
-    "multi-tape": "^1.7.0",
+    "multi-tape": "^1.7.1",
     "tape": "^5.8.1"
   },
   "scripts": {

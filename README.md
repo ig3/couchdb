@@ -275,3 +275,6 @@ db.get('some_doc')
 ### 2.0.2 - 20240709
  * Rewrite tests using node:test and node:assert
  * Rewrite tests using tape and express instead of nock
+
+### 2.0.3 - WIP
+ * Update dependencies
