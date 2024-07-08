@@ -32,8 +32,6 @@ Server.prototype.get = function (path, data) {
 };
 
 function Database (opts) {
-  if (!opts) throw new Error('Missing opts');
-  if (typeof opts !== 'object') throw new TypeError('opts is not an object');
   this.server = opts.server;
   this.db_name = opts.db_name;
   this.username = opts.username || opts.server.username;
@@ -56,7 +54,6 @@ Database.prototype.get = function (path, data) {
 };
 
 function Changes (opts) {
-  if (!opts) opts = {};
   this.hostname = opts.db.server.hostname;
   this.port = opts.db.server.port;
   this.protocol = opts.db.server.protocol;
@@ -72,12 +69,15 @@ util.inherits(Changes, EventEmitter);
 Changes.prototype.cancel = function () {
   this.cancelled = 1;
   if (this.request) {
+    console.log('aborting outstanding request');
     this.request.abort();
+    this.request = undefined;
   }
   this.emit('cancelled');
 };
 
 Changes.prototype.connect = function () {
+  if (this.cancelled) return;
   const client = this.protocol === 'https' ? https : http;
   const self = this;
 
@@ -100,16 +100,22 @@ Changes.prototype.connect = function () {
     if ((res.headers.server || '').match(/^couchdb/i)) {
       self.rawData = '';
       self.couchdbConnection.on('data', self.onData.bind(self));
-      self.couchdbConnection.on('end', self.reconnect.bind(self));
+      self.couchdbConnection.on('end', () => {
+        if (!self.cancelled) {
+          self.reconnect();
+        }
+      });
     } else {
       res.destroy();
       self.emit('error', new Error('Not CouchDB'));
-      self.reconnect();
+      if (!self.cancelled) {
+        self.reconnect();
+      }
     }
   })
   .on('error', function (error) {
+    self.emit('error', error);
     if (!self.cancelled) {
-      self.emit('error', error);
       self.reconnect();
     }
   }).end();
@@ -117,6 +123,10 @@ Changes.prototype.connect = function () {
 
 Changes.prototype.reconnect = function () {
   this.emit('reconnect');
+  if (this.request) {
+    this.request.abort();
+    this.request = undefined;
+  }
   if (!this.cancelled) {
     global.setTimeout(this.connect.bind(this), 10000);
   }

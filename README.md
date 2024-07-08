@@ -271,3 +271,7 @@ db.get('some_doc')
 ### 2.0.1 - 20240620
  * Minimize published package size
  * Update dependencies
+
+### 2.0.2 - WIP
+ * Rewrite tests using node:test and node:assert
+ * Rewrite tests using tape and express instead of nock
